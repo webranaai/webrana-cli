@@ -1,0 +1,36 @@
+id: hello-plugin
+name: Hello Plugin
+version: 1.0.0
+description: A simple example plugin that greets users and demonstrates the plugin system
+author:
+  name: Webrana Team
+  email: team@webrana.dev
+  url: https://webrana.dev
+plugin_type: wasm
+min_webrana_version: "0.3.0"
+permissions:
+  - fs:read
+skills:
+  - name: greet
+    description: Greet a user by name
+    input_schema:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the person to greet
+      required:
+        - name
+    requires_confirmation: false
+  - name: count_files
+    description: Count files in a directory
+    input_schema:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Directory path to count files in
+      required:
+        - path
+    requires_confirmation: false
+entry_point: plugin.wasm

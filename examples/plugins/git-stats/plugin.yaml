@@ -1,0 +1,52 @@
+id: git-stats
+name: Git Statistics
+version: 1.0.0
+description: Analyze git repository statistics - commits, contributors, file changes
+author:
+  name: Webrana Team
+  email: team@webrana.dev
+plugin_type: script
+min_webrana_version: "0.3.0"
+permissions:
+  - fs:read
+  - shell:execute
+  - git:access
+skills:
+  - name: git_summary
+    description: Get a summary of the git repository including commit count, contributors, and recent activity
+    input_schema:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Path to git repository (default current directory)
+      required: []
+    requires_confirmation: false
+  - name: git_contributors
+    description: List all contributors with their commit counts
+    input_schema:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Path to git repository
+        limit:
+          type: integer
+          description: Maximum number of contributors to show
+      required: []
+    requires_confirmation: false
+  - name: git_activity
+    description: Show commit activity over time (daily/weekly/monthly)
+    input_schema:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Path to git repository
+        period:
+          type: string
+          enum: [daily, weekly, monthly]
+          description: Time period for grouping
+      required: []
+    requires_confirmation: false
+entry_point: plugin.sh
