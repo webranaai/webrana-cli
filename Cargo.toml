@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Webrana Team"]
 description = "Autonomous CLI Agent with MCP support, multi-agent architecture, and extensible skills"
 license = "MIT"
-repository = "https://github.com/webrana/webrana-cli"
+repository = "https://github.com/webranaai/webrana-cli"
 keywords = ["cli", "ai", "agent", "mcp", "llm"]
 categories = ["command-line-utilities", "development-tools"]
 
