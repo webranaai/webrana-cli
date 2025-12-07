@@ -315,6 +315,75 @@ async fn main() -> Result<()> {
                 }
             }
         }
+        Some(Commands::Version) => {
+            println!("Webrana CLI v{}", env!("CARGO_PKG_VERSION"));
+            println!("Build: {}", if cfg!(debug_assertions) { "debug" } else { "release" });
+            println!("Target: {}", std::env::consts::ARCH);
+            println!("OS: {}", std::env::consts::OS);
+            println!();
+            println!("Features:");
+            println!("  - WASM plugins: enabled");
+            #[cfg(feature = "qdrant")]
+            println!("  - Qdrant: enabled");
+            #[cfg(not(feature = "qdrant"))]
+            println!("  - Qdrant: disabled");
+            #[cfg(feature = "tui")]
+            println!("  - TUI: enabled");
+            #[cfg(not(feature = "tui"))]
+            println!("  - TUI: disabled");
+        }
+        Some(Commands::Doctor) => {
+            println!("Webrana CLI - System Check\n");
+            
+            // Check config
+            print!("Configuration... ");
+            if settings.get_model(&settings.default_model).is_some() {
+                println!("OK (model: {})", settings.default_model);
+            } else {
+                println!("WARN (no default model)");
+            }
+
+            // Check API keys
+            print!("OpenAI API Key... ");
+            if std::env::var("OPENAI_API_KEY").is_ok() {
+                println!("OK");
+            } else {
+                println!("NOT SET");
+            }
+
+            print!("Anthropic API Key... ");
+            if std::env::var("ANTHROPIC_API_KEY").is_ok() {
+                println!("OK");
+            } else {
+                println!("NOT SET");
+            }
+
+            // Check git
+            print!("Git... ");
+            match std::process::Command::new("git").arg("--version").output() {
+                Ok(output) => {
+                    let version = String::from_utf8_lossy(&output.stdout);
+                    println!("OK ({})", version.trim());
+                }
+                Err(_) => println!("NOT FOUND"),
+            }
+
+            // Check plugins directory
+            print!("Plugins directory... ");
+            let plugins_dir = directories::ProjectDirs::from("dev", "webrana", "webrana-cli")
+                .map(|dirs| dirs.data_dir().join("plugins"));
+            if let Some(dir) = plugins_dir {
+                if dir.exists() {
+                    println!("OK ({})", dir.display());
+                } else {
+                    println!("OK (will be created: {})", dir.display());
+                }
+            } else {
+                println!("WARN (using .webrana/plugins)");
+            }
+
+            println!("\nAll checks complete.");
+        }
         None => {
             let orchestrator = Orchestrator::new(settings, cli.auto).await?;
             orchestrator.repl().await?;

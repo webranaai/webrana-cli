@@ -122,6 +122,12 @@ pub enum Commands {
         #[command(subcommand)]
         command: PluginCommands,
     },
+
+    /// Show version and build information
+    Version,
+
+    /// Check system requirements and configuration
+    Doctor,
 }
 
 #[derive(Subcommand)]
