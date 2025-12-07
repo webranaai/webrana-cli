@@ -3,12 +3,13 @@
 **Autonomous CLI Coding Agent** - Your AI-powered terminal companion for software development.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
-[![Version](https://img.shields.io/badge/version-0.3.0--beta-blue.svg)](https://github.com/webranaai/webrana-cli/releases)
+[![Rust](https://img.shields.io/badge/Rust-1.80+-orange.svg)](https://www.rust-lang.org/)
+[![Version](https://img.shields.io/badge/version-0.3.0--alpha-blue.svg)](https://github.com/webranaai/webrana-cli/releases)
+[![Tests](https://img.shields.io/badge/tests-76%20passing-green.svg)](https://github.com/webranaai/webrana-cli/actions)
 
 ## Overview
 
-Webrana CLI is an open-source, terminal-native AI coding assistant that works directly in your development environment. Built with Rust for performance and safety, it supports multiple LLM providers and comes with an extensible skill system.
+Webrana CLI is an open-source, terminal-native AI coding assistant that works directly in your development environment. Built with Rust for performance and safety, it supports multiple LLM providers and comes with an extensible WASM plugin system.
 
 ### Key Features
 
@@ -16,10 +17,11 @@ Webrana CLI is an open-source, terminal-native AI coding assistant that works di
 - ⚡ **Streaming Responses** - Real-time output with SSE
 - 🛠️ **16+ Built-in Skills** - File ops, Git, shell, codebase analysis
 - 🔧 **Native Tool Calling** - Multi-turn execution with automatic context
-- 🔒 **Security First** - Input sanitization, credential redaction, safe commands
-- 🐳 **Docker Ready** - Production-grade containerization
-- 🔌 **Plugin System** - Extensible architecture (WASM/Native/Script)
+- 🔒 **3-Layer Security** - Input validation, risk assessment, output sanitization
+- 🐳 **Docker Ready** - Multi-platform containerization
+- 🔌 **WASM Plugins** - WebAssembly plugin system with wasmtime
 - 🏃 **Auto Mode** - Autonomous task execution with `webrana run`
+- ✅ **76 Tests** - Comprehensive test coverage across 8 suites
 
 ## Installation
 
@@ -39,7 +41,7 @@ cp target/release/webrana ~/.local/bin/
 
 ### Requirements
 
-- Rust 1.75.0 or newer
+- **Rust 1.80.0 or newer** (required for wasmtime)
 - One of: Anthropic API key, OpenAI API key, or Ollama running locally
 
 ## Quick Start
@@ -134,6 +136,47 @@ docker-compose up webrana-dev
 docker-compose -f docker-compose.yml up webrana
 ```
 
+## WASM Plugin System
+
+Webrana supports WebAssembly plugins for extensibility. Plugins run in a secure sandbox with wasmtime.
+
+### Sample Plugins Included
+
+| Plugin | Description | Functions |
+|--------|-------------|-----------|
+| `hello-world` | Demo plugin | greet, add, multiply |
+| `calculator` | Math operations | add, subtract, multiply, divide, factorial, fibonacci |
+| `text-utils` | String utilities | length, to_upper, to_lower, reverse, is_palindrome |
+
+### Creating a Plugin
+
+1. Create plugin directory: `~/.config/webrana/plugins/my-plugin/`
+2. Add `manifest.yaml`:
+
+```yaml
+id: my-plugin
+name: My Plugin
+version: 1.0.0
+plugin_type: wasm
+entry_point: plugin.wat
+
+skills:
+  - name: my_function
+    description: Does something useful
+```
+
+3. Create `plugin.wat` (WebAssembly Text):
+
+```wat
+(module
+  (func (export "my_function") (result i32)
+    i32.const 42
+  )
+)
+```
+
+See [docs/PLUGIN_DEVELOPMENT.md](docs/PLUGIN_DEVELOPMENT.md) for full guide.
+
 ## Architecture
 
 ```
@@ -145,11 +188,13 @@ webrana/
 │   ├── llm/             # Provider implementations
 │   ├── skills/          # Skill registry & implementations
 │   ├── indexer/         # Codebase indexing
-│   ├── plugins/         # Plugin system
+│   ├── plugins/         # WASM plugin runtime
 │   └── tui/             # Terminal UI (optional)
+├── plugins/             # Sample WASM plugins
 ├── agents/              # Agent definitions
 ├── config/              # Default configs
-└── tests/               # Test suite
+├── docs/                # Documentation
+└── tests/               # 76 tests across 8 suites
 ```
 
 ## Configuration
@@ -201,8 +246,10 @@ RUST_LOG=debug cargo run -- chat
 - [x] Multi-model streaming
 - [x] Native tool calling
 - [x] Git integration
-- [x] Plugin architecture
-- [x] Security hardening
+- [x] WASM plugin system (wasmtime)
+- [x] 3-layer security hardening
+- [x] 76 tests across 8 suites
+- [x] Multi-platform CI/CD
 - [ ] Persistent memory (SQLite)
 - [ ] RAG with semantic search
 - [ ] MCP client support
