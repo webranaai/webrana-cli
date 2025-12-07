@@ -1,5 +1,5 @@
 # SECURITY AUDIT REPORT
-## Webrana AI v0.3.0
+## Webrana CLI v0.3.0
 
 **Auditor:** SENTINEL (Security Engineer)
 **Date:** 2025-12-07
@@ -9,7 +9,7 @@
 
 ## 📋 EXECUTIVE SUMMARY
 
-This document contains the security audit findings for Webrana AI CLI agent. The audit focuses on identifying vulnerabilities that could lead to:
+This document contains the security audit findings for Webrana CLI CLI agent. The audit focuses on identifying vulnerabilities that could lead to:
 - Remote Code Execution (RCE)
 - Local Privilege Escalation
 - Data Exfiltration

@@ -1,5 +1,5 @@
 // ============================================
-// WEBRANA AI - Plugin System Tests
+// WEBRANA CLI - Plugin System Tests
 // Created by: VALIDATOR (Team Beta)
 // ============================================
 

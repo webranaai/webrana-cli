@@ -79,7 +79,7 @@ impl App {
             cursor_position: 0,
             messages: vec![ChatMessage {
                 role: MessageRole::System,
-                content: "Welcome to Webrana AI! Type your message and press Enter.".to_string(),
+                content: "Welcome to Webrana CLI! Type your message and press Enter.".to_string(),
                 timestamp: chrono_lite(),
             }],
             output: String::new(),

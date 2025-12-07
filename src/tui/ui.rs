@@ -194,7 +194,7 @@ fn draw_help_overlay(f: &mut Frame) {
 
     let help_text = vec![
         "",
-        "  WEBRANA AI - KEYBOARD SHORTCUTS",
+        "  WEBRANA CLI - KEYBOARD SHORTCUTS",
         "  ═══════════════════════════════",
         "",
         "  NORMAL MODE",

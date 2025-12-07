@@ -1,5 +1,5 @@
 // ============================================
-// WEBRANA AI - Configuration Tests
+// WEBRANA CLI - Configuration Tests
 // Created by: VALIDATOR (Team Beta)
 // ============================================
 

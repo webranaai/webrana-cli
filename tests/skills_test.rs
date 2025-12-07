@@ -1,5 +1,5 @@
 // ============================================
-// WEBRANA AI - Skills System Tests
+// WEBRANA CLI - Skills System Tests
 // Created by: VALIDATOR (Team Beta)
 // ============================================
 

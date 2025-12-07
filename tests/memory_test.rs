@@ -1,5 +1,5 @@
 // ============================================
-// WEBRANA AI - Memory/Context Tests
+// WEBRANA CLI - Memory/Context Tests
 // Created by: VALIDATOR (Team Beta)
 // ============================================
 

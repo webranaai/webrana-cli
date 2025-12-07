@@ -1,5 +1,5 @@
 // ============================================
-// WEBRANA AI - CLI Integration Tests
+// WEBRANA CLI - CLI Integration Tests
 // Created by: VALIDATOR (Team Beta)
 // ============================================
 

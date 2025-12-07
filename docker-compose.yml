@@ -1,5 +1,5 @@
 # ============================================
-# WEBRANA AI - Docker Compose
+# WEBRANA CLI - Docker Compose
 # Created by: ATLAS (Team Beta)
 # ============================================
 
@@ -10,8 +10,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: webrana/webrana-ai:latest
-    container_name: webrana-ai
+    image: webrana/webrana-cli:latest
+    container_name: webrana-cli
     
     # Interactive mode
     stdin_open: true

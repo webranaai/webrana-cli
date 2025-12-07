@@ -1,5 +1,5 @@
 // ============================================
-// WEBRANA AI - Plugin System
+// WEBRANA CLI - Plugin System
 // Created by: CIPHER (Team Beta)
 // ============================================
 

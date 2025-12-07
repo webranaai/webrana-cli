@@ -1,5 +1,5 @@
 // ============================================
-// WEBRANA AI - LLM Module Tests
+// WEBRANA CLI - LLM Module Tests
 // Created by: VALIDATOR (Team Beta)
 // ============================================
 

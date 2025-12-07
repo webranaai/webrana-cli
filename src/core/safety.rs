@@ -1,5 +1,5 @@
 // ============================================
-// WEBRANA AI - Safety & Security Module
+// WEBRANA CLI - Safety & Security Module
 // Created by: SENTINEL (Team Beta)
 // ============================================
 
@@ -7,7 +7,7 @@ use anyhow::{anyhow, Result};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-/// Security configuration for Webrana AI
+/// Security configuration for Webrana CLI
 #[derive(Debug, Clone)]
 pub struct SecurityConfig {
     /// Working directory boundary

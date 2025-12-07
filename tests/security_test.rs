@@ -1,5 +1,5 @@
 // ============================================
-// WEBRANA AI - Security Integration Tests
+// WEBRANA CLI - Security Integration Tests
 // Created by: VALIDATOR (Team Beta)
 // ============================================
 

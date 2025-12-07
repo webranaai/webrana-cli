@@ -1,5 +1,5 @@
 // ============================================
-// WEBRANA AI - Terminal User Interface
+// WEBRANA CLI - Terminal User Interface
 // Created by: FORGE (Team Alpha)
 // ============================================
 //

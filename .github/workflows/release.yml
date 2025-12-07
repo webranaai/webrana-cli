@@ -1,5 +1,5 @@
 # ============================================
-# WEBRANA AI - Release Automation
+# WEBRANA CLI - Release Automation
 # Created by: ATLAS (Team Beta)
 # ============================================
 
@@ -37,9 +37,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Webrana AI v${{ steps.get_version.outputs.version }}
+          release_name: Webrana CLI v${{ steps.get_version.outputs.version }}
           body: |
-            ## Webrana AI v${{ steps.get_version.outputs.version }}
+            ## Webrana CLI v${{ steps.get_version.outputs.version }}
             
             ### Installation
             
@@ -56,14 +56,14 @@ jobs:
             
             **Via Docker:**
             ```bash
-            docker pull webrana/webrana-ai:${{ steps.get_version.outputs.version }}
+            docker pull webrana/webrana-cli:${{ steps.get_version.outputs.version }}
             ```
             
             **Binary Download:**
             Download the appropriate binary for your platform below.
             
             ### Changelog
-            See [CHANGELOG.md](https://github.com/webrana/webrana-ai/blob/main/CHANGELOG.md) for details.
+            See [CHANGELOG.md](https://github.com/webrana/webrana-cli/blob/main/CHANGELOG.md) for details.
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
 
@@ -202,7 +202,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: webrana/webrana-ai
+          images: webrana/webrana-cli
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -250,7 +250,7 @@ jobs:
         with:
           formula-name: webrana
           homebrew-tap: webrana/homebrew-tap
-          download-url: https://github.com/webrana/webrana-ai/releases/download/v${{ needs.create-release.outputs.version }}/webrana-macos-x86_64.tar.gz
+          download-url: https://github.com/webrana/webrana-cli/releases/download/v${{ needs.create-release.outputs.version }}/webrana-macos-x86_64.tar.gz
         env:
           COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         continue-on-error: true

@@ -1,5 +1,5 @@
 # ============================================
-# WEBRANA AI - Homebrew Formula
+# WEBRANA CLI - Homebrew Formula
 # Created by: ATLAS (Team Beta)
 # ============================================
 # 
@@ -13,26 +13,26 @@
 
 class Webrana < Formula
   desc "Autonomous CLI Agent with MCP support and multi-model AI"
-  homepage "https://github.com/webrana/webrana-ai"
+  homepage "https://github.com/webrana/webrana-cli"
   version "0.3.0"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/webrana/webrana-ai/releases/download/v#{version}/webrana-macos-aarch64.tar.gz"
+      url "https://github.com/webrana/webrana-cli/releases/download/v#{version}/webrana-macos-aarch64.tar.gz"
       sha256 "PLACEHOLDER_ARM64_SHA256"
     else
-      url "https://github.com/webrana/webrana-ai/releases/download/v#{version}/webrana-macos-x86_64.tar.gz"
+      url "https://github.com/webrana/webrana-cli/releases/download/v#{version}/webrana-macos-x86_64.tar.gz"
       sha256 "PLACEHOLDER_X86_64_SHA256"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/webrana/webrana-ai/releases/download/v#{version}/webrana-linux-aarch64.tar.gz"
+      url "https://github.com/webrana/webrana-cli/releases/download/v#{version}/webrana-linux-aarch64.tar.gz"
       sha256 "PLACEHOLDER_LINUX_ARM64_SHA256"
     else
-      url "https://github.com/webrana/webrana-ai/releases/download/v#{version}/webrana-linux-x86_64.tar.gz"
+      url "https://github.com/webrana/webrana-cli/releases/download/v#{version}/webrana-linux-x86_64.tar.gz"
       sha256 "PLACEHOLDER_LINUX_X86_64_SHA256"
     end
   end
@@ -43,7 +43,7 @@ class Webrana < Formula
 
   def caveats
     <<~EOS
-      Webrana AI has been installed!
+      Webrana CLI has been installed!
 
       To get started, you'll need an API key:
         export ANTHROPIC_API_KEY=your-key-here
@@ -54,7 +54,7 @@ class Webrana < Formula
         webrana chat "Hello, I'm ready to code!"
         webrana run "Create a hello world in Python"
 
-      Documentation: https://github.com/webrana/webrana-ai
+      Documentation: https://github.com/webrana/webrana-cli
     EOS
   end
 
