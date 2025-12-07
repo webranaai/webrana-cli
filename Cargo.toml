@@ -56,6 +56,9 @@ bytes = "1"
 # Utils
 lazy_static = "1.4"
 
+# Vector Database
+qdrant-client = { version = "1.7", optional = true }
+
 [dev-dependencies]
 tokio-test = "0.4"
 tempfile = "3"
@@ -74,3 +77,4 @@ strip = true
 [features]
 default = []
 tui = ["ratatui", "crossterm"]
+qdrant = ["qdrant-client"]

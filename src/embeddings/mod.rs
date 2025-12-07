@@ -7,8 +7,14 @@
 mod provider;
 mod store;
 
+#[cfg(feature = "qdrant")]
+mod qdrant;
+
 pub use provider::{EmbeddingProvider, MockEmbeddingProvider, OpenAIEmbeddings};
 pub use store::{EmbeddingStore, SearchResult, StoredEmbedding};
+
+#[cfg(feature = "qdrant")]
+pub use qdrant::{QdrantConfig, QdrantStore};
 
 use anyhow::Result;
 
