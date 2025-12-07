@@ -77,6 +77,80 @@ async fn main() -> Result<()> {
         Some(Commands::Tui) => {
             tui::run_tui().await?;
         }
+        Some(Commands::Search {
+            query,
+            dir,
+            top_k,
+            index,
+        }) => {
+            use skills::{SemanticSearch, SemanticSearchConfig};
+            use std::path::Path;
+
+            let search_dir = dir.as_deref().unwrap_or(".");
+            let config = SemanticSearchConfig {
+                top_k,
+                ..Default::default()
+            };
+
+            // Check for API key
+            let api_key = std::env::var("OPENAI_API_KEY").ok();
+            
+            let mut search = if let Some(key) = api_key {
+                SemanticSearch::new(&key, config)
+            } else {
+                console.warn("OPENAI_API_KEY not set, using mock embeddings");
+                SemanticSearch::new_mock(config)
+            };
+
+            if index {
+                console.info(&format!("Indexing {}...", search_dir));
+                let stats = search.index_directory(Path::new(search_dir)).await?;
+                console.info(&format!(
+                    "Indexed {} files, {} chunks ({} skipped, {} errors)",
+                    stats.files, stats.chunks, stats.skipped, stats.errors
+                ));
+            }
+
+            console.info(&format!("Searching for: {}", query));
+            let results = search.search(&query).await?;
+
+            if results.is_empty() {
+                console.warn("No results found. Try indexing first with --index");
+            } else {
+                for (i, result) in results.iter().enumerate() {
+                    println!("\n{}. {} (score: {:.3})", i + 1, result.id, result.score);
+                    if let Some(file) = result.metadata.get("file") {
+                        println!("   File: {}", file);
+                    }
+                    // Show snippet
+                    let snippet: String = result.text.chars().take(200).collect();
+                    println!("   {}", snippet.replace('\n', " "));
+                }
+            }
+        }
+        Some(Commands::Index { dir }) => {
+            use skills::{SemanticSearch, SemanticSearchConfig};
+            use std::path::Path;
+
+            let search_dir = dir.as_deref().unwrap_or(".");
+            let config = SemanticSearchConfig::default();
+
+            let api_key = std::env::var("OPENAI_API_KEY").ok();
+            
+            let mut search = if let Some(key) = api_key {
+                SemanticSearch::new(&key, config)
+            } else {
+                console.warn("OPENAI_API_KEY not set, using mock embeddings");
+                SemanticSearch::new_mock(config)
+            };
+
+            console.info(&format!("Indexing {}...", search_dir));
+            let stats = search.index_directory(Path::new(search_dir)).await?;
+            console.info(&format!(
+                "Done! Indexed {} files, {} chunks ({} skipped, {} errors)",
+                stats.files, stats.chunks, stats.skipped, stats.errors
+            ));
+        }
         None => {
             let orchestrator = Orchestrator::new(settings, cli.auto).await?;
             orchestrator.repl().await?;

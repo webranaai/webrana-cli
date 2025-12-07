@@ -71,6 +71,32 @@ pub enum Commands {
 
     /// Launch Terminal User Interface
     Tui,
+
+    /// Semantic search in codebase
+    Search {
+        /// Search query
+        #[arg(required = true)]
+        query: String,
+
+        /// Directory to search in (default: current directory)
+        #[arg(short, long)]
+        dir: Option<String>,
+
+        /// Number of results to return
+        #[arg(short = 'n', long, default_value = "5")]
+        top_k: usize,
+
+        /// Index the codebase before searching
+        #[arg(long)]
+        index: bool,
+    },
+
+    /// Index codebase for semantic search
+    Index {
+        /// Directory to index (default: current directory)
+        #[arg(short, long)]
+        dir: Option<String>,
+    },
 }
 
 #[derive(Subcommand)]
