@@ -1,0 +1,71 @@
+[package]
+name = "webrana"
+version = "0.3.0"
+edition = "2021"
+authors = ["Webrana Team"]
+description = "Autonomous CLI Agent with MCP support, multi-agent architecture, and extensible skills"
+license = "MIT"
+repository = "https://github.com/webrana/webrana-ai"
+keywords = ["cli", "ai", "agent", "mcp", "llm"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+# CLI & Async
+clap = { version = "4.4", features = ["derive", "env"] }
+tokio = { version = "1.35", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# TUI (requires Rust 1.80+, disabled for now)
+# Enable with: cargo build --features tui
+ratatui = { version = "0.24", optional = true }
+crossterm = { version = "0.27", optional = true }
+
+# HTTP & Serialization
+reqwest = { version = "0.11", default-features = false, features = ["json", "stream", "rustls-tls"] }
+url = "2.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio-stream = "0.1"
+futures = "0.3"
+
+# Config & Files
+toml = "0.7"
+directories = "4"
+dotenvy = "0.15"
+
+# Utils
+anyhow = "1"
+thiserror = "1"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4"] }
+colored = "2"
+serde_yaml = "0.8"
+regex = "1"
+
+# Plugin System (WASM runtime)
+wasmtime = "27"
+
+# Git integration (via shell commands - no external deps)
+
+# Streaming
+futures-util = "0.3"
+bytes = "1"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3"
+
+[[bin]]
+name = "webrana"
+path = "src/main.rs"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[features]
+default = []
+tui = ["ratatui", "crossterm"]

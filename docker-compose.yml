@@ -1,0 +1,82 @@
+# ============================================
+# WEBRANA AI - Docker Compose
+# Created by: ATLAS (Team Beta)
+# ============================================
+
+version: '3.8'
+
+services:
+  webrana:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: webrana/webrana-ai:latest
+    container_name: webrana-ai
+    
+    # Interactive mode
+    stdin_open: true
+    tty: true
+    
+    # Environment variables
+    environment:
+      - RUST_LOG=info
+      # API keys (provide via .env or docker-compose override)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    
+    # Mount volumes for persistence
+    volumes:
+      # Mount current directory as workspace
+      - ./workspace:/workspace
+      # Persist configuration
+      - webrana-config:/home/webrana/.config/webrana
+      # Mount git config for git operations
+      - ~/.gitconfig:/home/webrana/.gitconfig:ro
+    
+    # Working directory inside container
+    working_dir: /workspace
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Development service with hot reload (future)
+  webrana-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: webrana-dev
+    stdin_open: true
+    tty: true
+    environment:
+      - RUST_LOG=debug
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    volumes:
+      - .:/app
+      - cargo-cache:/usr/local/cargo/registry
+      - target-cache:/app/target
+    working_dir: /app
+    command: cargo run -- --help
+    profiles:
+      - dev
+
+volumes:
+  webrana-config:
+  cargo-cache:
+  target-cache:
+
+# Usage:
+# ------
+# Build:           docker-compose build
+# Run interactive: docker-compose run --rm webrana
+# Run with chat:   docker-compose run --rm webrana chat "hello"
+# Run auto mode:   docker-compose run --rm webrana run "task"
+# Development:     docker-compose --profile dev up webrana-dev

@@ -1,0 +1,65 @@
+# Webrana AI Configuration
+# Copy this to ~/.config/webrana/webrana/config.toml
+
+# Default model and agent
+default_model = "claude"
+default_agent = "nexus"
+
+# Model configurations (BYOK - Bring Your Own Key)
+[models.claude]
+provider = "anthropic"
+api_key_env = "ANTHROPIC_API_KEY"
+model = "claude-sonnet-4-20250514"
+temperature = 0.7
+max_tokens = 4096
+
+[models.gpt]
+provider = "openai"
+api_key_env = "OPENAI_API_KEY"
+model = "gpt-4o"
+temperature = 0.7
+max_tokens = 4096
+
+[models.ollama]
+provider = "ollama"
+base_url = "http://localhost:11434"
+model = "llama3"
+temperature = 0.7
+max_tokens = 4096
+
+# Custom OpenAI-compatible endpoint example
+# [models.custom]
+# provider = "openai_compatible"
+# base_url = "https://your-api.com/v1"
+# api_key_env = "CUSTOM_API_KEY"
+# model = "your-model"
+
+# Agent configurations
+[agents.nexus]
+name = "NEXUS"
+description = "Orchestrator - Task decomposition and routing"
+model = "claude"
+skills = ["*"]
+temperature = 0.3
+
+[agents.forge]
+name = "FORGE"
+description = "Executor - Code and system operations"
+model = "claude"
+skills = ["read_file", "write_file", "execute_command", "list_files"]
+temperature = 0.2
+
+[agents.synapse]
+name = "SYNAPSE"
+description = "Planner - AI and prompt engineering"
+model = "claude"
+skills = ["read_file", "search_files"]
+temperature = 0.5
+
+# Safety settings
+[safety]
+confirm_file_write = true
+confirm_file_delete = true
+confirm_shell_execute = true
+allowed_commands = []  # Empty = allow all (with confirmation)
+blocked_paths = ["/etc", "/usr", "/bin", "/sbin", "/var"]
