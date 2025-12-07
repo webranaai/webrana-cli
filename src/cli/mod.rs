@@ -97,6 +97,25 @@ pub enum Commands {
         #[arg(short, long)]
         dir: Option<String>,
     },
+
+    /// Scan for secrets and credentials in codebase
+    Scan {
+        /// Directory to scan (default: current directory)
+        #[arg(long)]
+        dir: Option<String>,
+
+        /// Output format (text, json)
+        #[arg(short, long, default_value = "text")]
+        format: String,
+
+        /// Minimum severity to report (low, medium, high, critical)
+        #[arg(long, default_value = "low")]
+        min_severity: String,
+
+        /// Fail with exit code 1 if secrets found
+        #[arg(long)]
+        fail_on_secrets: bool,
+    },
 }
 
 #[derive(Subcommand)]

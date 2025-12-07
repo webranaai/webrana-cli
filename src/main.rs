@@ -151,6 +151,81 @@ async fn main() -> Result<()> {
                 stats.files, stats.chunks, stats.skipped, stats.errors
             ));
         }
+        Some(Commands::Scan {
+            dir,
+            format,
+            min_severity,
+            fail_on_secrets,
+        }) => {
+            use core::{ScanSummary, ScannerConfig, SecretScanner, SecretSeverity};
+            use std::path::Path;
+
+            let scan_dir = dir.as_deref().unwrap_or(".");
+            
+            // Parse minimum severity
+            let min_sev = match min_severity.to_lowercase().as_str() {
+                "low" => SecretSeverity::Low,
+                "medium" => SecretSeverity::Medium,
+                "high" => SecretSeverity::High,
+                "critical" => SecretSeverity::Critical,
+                _ => {
+                    console.error("Invalid severity. Use: low, medium, high, critical");
+                    return Ok(());
+                }
+            };
+
+            let config = ScannerConfig {
+                min_severity: min_sev,
+                ..Default::default()
+            };
+
+            let scanner = SecretScanner::new(config);
+            
+            console.info(&format!("Scanning {} for secrets...", scan_dir));
+            
+            let secrets = scanner.scan_directory(Path::new(scan_dir))?;
+            let summary = ScanSummary::from_secrets(&secrets);
+
+            if format == "json" {
+                println!("{}", serde_json::to_string_pretty(&secrets)?);
+            } else {
+                if secrets.is_empty() {
+                    console.success("No secrets detected!");
+                } else {
+                    println!("\n{} secrets found:\n", secrets.len());
+                    
+                    for secret in &secrets {
+                        let severity_icon = match secret.severity {
+                            SecretSeverity::Critical => "🔴 CRITICAL",
+                            SecretSeverity::High => "🟠 HIGH",
+                            SecretSeverity::Medium => "🟡 MEDIUM",
+                            SecretSeverity::Low => "🟢 LOW",
+                        };
+                        
+                        println!(
+                            "{}: {}:{}\n   Type: {}\n   Match: {}\n",
+                            severity_icon,
+                            secret.file,
+                            secret.line,
+                            secret.secret_type.description(),
+                            secret.matched_text
+                        );
+                    }
+
+                    println!("Summary:");
+                    println!("  Files with secrets: {}", summary.files_with_secrets);
+                    println!("  Total secrets: {}", summary.total_secrets);
+                    
+                    for (severity, count) in &summary.by_severity {
+                        println!("  {}: {}", severity, count);
+                    }
+                }
+            }
+
+            if fail_on_secrets && !secrets.is_empty() {
+                std::process::exit(1);
+            }
+        }
         None => {
             let orchestrator = Orchestrator::new(settings, cli.auto).await?;
             orchestrator.repl().await?;
