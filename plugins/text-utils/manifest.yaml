@@ -1,0 +1,96 @@
+# ============================================
+# Text Utils Plugin - String Operations
+# Created by: CIPHER (Team Beta)
+# ============================================
+
+id: text-utils
+name: Text Utilities Plugin
+version: 1.0.0
+description: Text and string utility functions
+
+author:
+  name: CIPHER
+  email: cipher@webrana.ai
+
+plugin_type: wasm
+min_webrana_version: "0.3.0"
+
+permissions: []
+
+skills:
+  - name: length
+    description: Get the length of a string stored in memory
+    input_schema:
+      type: object
+      properties:
+        ptr:
+          type: integer
+          description: Memory pointer to string
+      required: [ptr]
+    requires_confirmation: false
+
+  - name: count_chars
+    description: Count occurrences of a character (ASCII code)
+    input_schema:
+      type: object
+      properties:
+        ptr:
+          type: integer
+          description: Memory pointer to string
+        char:
+          type: integer
+          description: ASCII code of character to count
+      required: [ptr, char]
+    requires_confirmation: false
+
+  - name: to_upper
+    description: Convert string to uppercase (in-place)
+    input_schema:
+      type: object
+      properties:
+        ptr:
+          type: integer
+          description: Memory pointer to string
+      required: [ptr]
+    requires_confirmation: false
+
+  - name: to_lower
+    description: Convert string to lowercase (in-place)
+    input_schema:
+      type: object
+      properties:
+        ptr:
+          type: integer
+          description: Memory pointer to string
+      required: [ptr]
+    requires_confirmation: false
+
+  - name: reverse
+    description: Reverse string (in-place)
+    input_schema:
+      type: object
+      properties:
+        ptr:
+          type: integer
+          description: Memory pointer to string
+        len:
+          type: integer
+          description: Length of string
+      required: [ptr, len]
+    requires_confirmation: false
+
+  - name: is_palindrome
+    description: Check if string is a palindrome
+    input_schema:
+      type: object
+      properties:
+        ptr:
+          type: integer
+          description: Memory pointer to string
+        len:
+          type: integer
+          description: Length of string
+      required: [ptr, len]
+    requires_confirmation: false
+
+entry_point: plugin.wat

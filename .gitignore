@@ -40,3 +40,4 @@ plugins/*/target/
 
 # Local config (keep example)
 config/local.toml
+dist/

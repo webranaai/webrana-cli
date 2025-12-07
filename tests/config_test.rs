@@ -13,6 +13,9 @@ mod config_tests {
     #[test]
     fn test_default_settings() {
         let settings_toml = r#"
+default_model = "claude"
+default_agent = "nexus"
+
 [models.claude]
 provider = "anthropic"
 api_key_env = "ANTHROPIC_API_KEY"
@@ -27,16 +30,6 @@ model = "gpt-4o"
 temperature = 0.7
 max_tokens = 4096
 
-[models.ollama]
-provider = "ollama"
-base_url = "http://localhost:11434"
-model = "llama3"
-temperature = 0.7
-max_tokens = 4096
-
-default_model = "claude"
-default_agent = "nexus"
-
 [safety]
 confirm_file_write = true
 confirm_file_delete = true
@@ -47,8 +40,8 @@ confirm_shell_execute = true
         assert!(parsed.is_ok(), "Settings TOML should be valid");
         
         let value = parsed.unwrap();
-        assert_eq!(value["default_model"].as_str(), Some("claude"));
-        assert_eq!(value["default_agent"].as_str(), Some("nexus"));
+        assert_eq!(value.get("default_model").and_then(|v| v.as_str()), Some("claude"));
+        assert_eq!(value.get("default_agent").and_then(|v| v.as_str()), Some("nexus"));
     }
 
     /// Test model configuration validation

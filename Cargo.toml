@@ -43,9 +43,9 @@ colored = "2"
 serde_yaml = "0.8"
 regex = "1"
 
-# Plugin System (WASM runtime with WAT support)
-wasmtime = { version = "27", features = ["wat"] }
-wat = "1"
+# Plugin System (WASM runtime - disabled, requires Rust 1.80+)
+# wasmtime = { version = "27", features = ["wat"] }
+# wat = "1"
 
 # Git integration (via shell commands - no external deps)
 

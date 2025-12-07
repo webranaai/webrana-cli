@@ -1,0 +1,127 @@
+# ============================================
+# Calculator Plugin - Mathematical Operations
+# Created by: CIPHER (Team Beta)
+# ============================================
+
+id: calculator
+name: Calculator Plugin
+version: 1.0.0
+description: Perform basic and advanced mathematical calculations
+
+author:
+  name: CIPHER
+  email: cipher@webrana.ai
+
+plugin_type: wasm
+min_webrana_version: "0.3.0"
+
+permissions: []
+
+skills:
+  - name: add
+    description: Add two integers
+    input_schema:
+      type: object
+      properties:
+        a:
+          type: integer
+          description: First number
+        b:
+          type: integer
+          description: Second number
+      required: [a, b]
+    requires_confirmation: false
+
+  - name: subtract
+    description: Subtract second number from first
+    input_schema:
+      type: object
+      properties:
+        a:
+          type: integer
+          description: First number
+        b:
+          type: integer
+          description: Second number
+      required: [a, b]
+    requires_confirmation: false
+
+  - name: multiply
+    description: Multiply two integers
+    input_schema:
+      type: object
+      properties:
+        a:
+          type: integer
+          description: First number
+        b:
+          type: integer
+          description: Second number
+      required: [a, b]
+    requires_confirmation: false
+
+  - name: divide
+    description: Divide first number by second (integer division)
+    input_schema:
+      type: object
+      properties:
+        a:
+          type: integer
+          description: Dividend
+        b:
+          type: integer
+          description: Divisor (non-zero)
+      required: [a, b]
+    requires_confirmation: false
+
+  - name: modulo
+    description: Get remainder of division
+    input_schema:
+      type: object
+      properties:
+        a:
+          type: integer
+          description: Dividend
+        b:
+          type: integer
+          description: Divisor
+      required: [a, b]
+    requires_confirmation: false
+
+  - name: power
+    description: Raise base to exponent power
+    input_schema:
+      type: object
+      properties:
+        base:
+          type: integer
+          description: Base number
+        exp:
+          type: integer
+          description: Exponent (non-negative)
+      required: [base, exp]
+    requires_confirmation: false
+
+  - name: factorial
+    description: Calculate factorial of n
+    input_schema:
+      type: object
+      properties:
+        n:
+          type: integer
+          description: Non-negative integer
+      required: [n]
+    requires_confirmation: false
+
+  - name: fibonacci
+    description: Get nth Fibonacci number
+    input_schema:
+      type: object
+      properties:
+        n:
+          type: integer
+          description: Position in sequence (0-indexed)
+      required: [n]
+    requires_confirmation: false
+
+entry_point: plugin.wat
