@@ -153,4 +153,96 @@ type = "object"
         assert!(output_json["result"].is_object());
         assert!(output_json["logs"].is_array());
     }
+
+    /// Test WASM plugin loading from WAT format
+    #[test]
+    fn test_wasm_wat_compilation() {
+        let temp = tempdir().expect("Failed to create temp dir");
+        let wat_path = temp.path().join("test.wat");
+        
+        // Simple WAT module with exported functions
+        let wat_code = r#"
+(module
+  (func (export "greet") (result i32)
+    i32.const 42
+  )
+  (func (export "add") (param $a i32) (param $b i32) (result i32)
+    local.get $a
+    local.get $b
+    i32.add
+  )
+)
+"#;
+        
+        fs::write(&wat_path, wat_code).expect("Failed to write WAT file");
+        
+        // Compile using wasmtime
+        use wasmtime::{Engine, Module};
+        let engine = Engine::default();
+        let wat_text = fs::read_to_string(&wat_path).expect("Failed to read WAT");
+        let result = Module::new(&engine, &wat_text);
+        
+        assert!(result.is_ok(), "WAT compilation should succeed");
+        
+        let module = result.unwrap();
+        let exports: Vec<String> = module.exports().map(|e| e.name().to_string()).collect();
+        
+        assert!(exports.contains(&"greet".to_string()), "Should export 'greet'");
+        assert!(exports.contains(&"add".to_string()), "Should export 'add'");
+    }
+
+    /// Test WASM function execution
+    #[test]
+    fn test_wasm_function_execution() {
+        use wasmtime::{Engine, Module, Store, Linker};
+        
+        let wat_code = r#"
+(module
+  (func (export "add") (param $a i32) (param $b i32) (result i32)
+    local.get $a
+    local.get $b
+    i32.add
+  )
+)
+"#;
+        
+        let engine = Engine::default();
+        let module = Module::new(&engine, wat_code).expect("WAT compilation failed");
+        let mut store = Store::new(&engine, ());
+        let linker = Linker::new(&engine);
+        let instance = linker.instantiate(&mut store, &module).expect("Instantiation failed");
+        
+        // Get and call the add function
+        let add_func = instance.get_typed_func::<(i32, i32), i32>(&mut store, "add")
+            .expect("Failed to get add function");
+        
+        let result = add_func.call(&mut store, (5, 3)).expect("Function call failed");
+        assert_eq!(result, 8, "5 + 3 should equal 8");
+        
+        let result2 = add_func.call(&mut store, (100, 200)).expect("Function call failed");
+        assert_eq!(result2, 300, "100 + 200 should equal 300");
+    }
+
+    /// Test hello-world plugin exists and is valid
+    #[test]
+    fn test_hello_world_plugin_exists() {
+        let plugin_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("plugins/hello-world");
+        
+        assert!(plugin_dir.exists(), "hello-world plugin directory should exist");
+        
+        let manifest_path = plugin_dir.join("manifest.yaml");
+        assert!(manifest_path.exists(), "manifest.yaml should exist");
+        
+        let wat_path = plugin_dir.join("plugin.wat");
+        assert!(wat_path.exists(), "plugin.wat should exist");
+        
+        // Validate manifest structure
+        let manifest_content = fs::read_to_string(&manifest_path).expect("Failed to read manifest");
+        let manifest: serde_yaml::Value = serde_yaml::from_str(&manifest_content)
+            .expect("Failed to parse manifest");
+        
+        assert_eq!(manifest["id"].as_str(), Some("hello-world"));
+        assert_eq!(manifest["plugin_type"].as_str(), Some("wasm"));
+    }
 }

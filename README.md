@@ -1,14 +1,14 @@
-# 🦎 Webrana AI
+# 🦎 Webrana CLI
 
 **Autonomous CLI Coding Agent** - Your AI-powered terminal companion for software development.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
-[![Version](https://img.shields.io/badge/version-0.3.0--beta-blue.svg)](https://github.com/webrana/webrana-ai/releases)
+[![Version](https://img.shields.io/badge/version-0.3.0--beta-blue.svg)](https://github.com/webrana/webrana-cli/releases)
 
 ## Overview
 
-Webrana AI is an open-source, terminal-native AI coding assistant that works directly in your development environment. Built with Rust for performance and safety, it supports multiple LLM providers and comes with an extensible skill system.
+Webrana CLI is an open-source, terminal-native AI coding assistant that works directly in your development environment. Built with Rust for performance and safety, it supports multiple LLM providers and comes with an extensible skill system.
 
 ### Key Features
 
@@ -27,8 +27,8 @@ Webrana AI is an open-source, terminal-native AI coding assistant that works dir
 
 ```bash
 # Clone the repository
-git clone https://github.com/webrana/webrana-ai.git
-cd webrana-ai/webrana
+git clone https://github.com/webrana/webrana-cli.git
+cd webrana-cli
 
 # Build release binary
 cargo build --release

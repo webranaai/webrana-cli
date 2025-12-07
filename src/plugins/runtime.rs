@@ -23,10 +23,29 @@ pub struct WasmPluginState {
 
 impl WasmPluginState {
     /// Create new WASM plugin state from file
+    /// Supports both .wasm (binary) and .wat (text) formats
     pub fn from_file(wasm_path: &PathBuf) -> Result<Self> {
         let engine = Engine::default();
-        let module = Module::from_file(&engine, wasm_path)
-            .map_err(|e| anyhow!("Failed to compile WASM module: {}", e))?;
+        
+        // Check file extension to determine format
+        let extension = wasm_path.extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
+        
+        let module = match extension {
+            "wat" => {
+                // Read WAT text and compile
+                let wat_text = std::fs::read_to_string(wasm_path)
+                    .map_err(|e| anyhow!("Failed to read WAT file: {}", e))?;
+                Module::new(&engine, &wat_text)
+                    .map_err(|e| anyhow!("Failed to compile WAT module: {}", e))?
+            }
+            "wasm" | _ => {
+                // Load binary WASM
+                Module::from_file(&engine, wasm_path)
+                    .map_err(|e| anyhow!("Failed to load WASM module: {}", e))?
+            }
+        };
         
         Ok(Self { engine, module })
     }
@@ -181,34 +200,62 @@ impl PluginInstance {
             return Err(anyhow!("WASM file not found: {:?}", wasm_path));
         }
 
-        // TODO: Initialize wasmtime runtime
-        // let engine = wasmtime::Engine::default();
-        // let module = wasmtime::Module::from_file(&engine, &wasm_path)?;
-        // let linker = wasmtime::Linker::new(&engine);
-        // ... setup host functions
-        // self.wasm_instance = Some(linker.instantiate(&mut store, &module)?);
-
-        // For now, just validate the file exists
-        tracing::info!("WASM plugin loaded: {}", self.manifest.id);
+        // Compile and load the WASM module
+        let wasm_state = WasmPluginState::from_file(&wasm_path)?;
         
+        // Log available exports
+        let exports = wasm_state.list_exports();
+        tracing::info!(
+            "WASM plugin '{}' loaded with {} exports: {:?}",
+            self.manifest.id,
+            exports.len(),
+            exports
+        );
+        
+        self.wasm_state = Some(wasm_state);
         Ok(())
     }
 
     fn execute_wasm(&self, input: &PluginInput) -> Result<PluginOutput> {
-        // TODO: Call WASM function
-        // let func = self.wasm_instance.get_typed_func::<(i32, i32), i32>("execute")?;
-        // let result = func.call(&mut store, (input_ptr, input_len))?;
+        let wasm_state = self.wasm_state.as_ref()
+            .ok_or_else(|| anyhow!("WASM plugin not initialized"))?;
 
-        // Placeholder implementation
-        Ok(PluginOutput::success(serde_json::json!({
-            "message": format!("WASM execution placeholder for action: {}", input.action),
-            "plugin": self.manifest.id
-        })))
+        // Determine which function to call based on the action
+        // Convention: action name maps to exported function
+        let func_name = &input.action;
+        let input_json = serde_json::to_string(&input.params)?;
+        
+        // Execute the WASM function
+        match wasm_state.execute(func_name, &input_json) {
+            Ok(result) => {
+                tracing::debug!(
+                    "WASM plugin '{}' executed '{}' successfully",
+                    self.manifest.id,
+                    func_name
+                );
+                
+                // Parse result as JSON if possible
+                let result_value: serde_json::Value = serde_json::from_str(&result)
+                    .unwrap_or_else(|_| serde_json::json!({ "raw": result }));
+                
+                Ok(PluginOutput::success(result_value)
+                    .with_log(&format!("Executed WASM function: {}", func_name)))
+            }
+            Err(e) => {
+                tracing::error!(
+                    "WASM plugin '{}' execution failed: {}",
+                    self.manifest.id,
+                    e
+                );
+                Ok(PluginOutput::error(&e.to_string()))
+            }
+        }
     }
 
     fn cleanup_wasm(&mut self) -> Result<()> {
-        // TODO: Drop WASM instance
-        // self.wasm_instance = None;
+        // Drop the WASM state
+        self.wasm_state = None;
+        tracing::info!("WASM plugin '{}' unloaded", self.manifest.id);
         Ok(())
     }
 

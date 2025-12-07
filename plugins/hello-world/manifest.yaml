@@ -1,0 +1,47 @@
+# ============================================
+# Hello World Plugin - Sample WASM Plugin
+# Created by: CIPHER (Team Beta)
+# ============================================
+
+id: hello-world
+name: Hello World Plugin
+version: 1.0.0
+description: A simple demonstration plugin showing WASM integration
+
+author:
+  name: CIPHER
+  email: cipher@webrana.ai
+
+plugin_type: wasm
+min_webrana_version: "0.3.0"
+
+permissions:
+  - fs:read
+
+skills:
+  - name: greet
+    description: Returns a greeting message
+    input_schema:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name to greet
+      required: []
+    requires_confirmation: false
+
+  - name: add
+    description: Adds two numbers together
+    input_schema:
+      type: object
+      properties:
+        a:
+          type: integer
+          description: First number
+        b:
+          type: integer
+          description: Second number
+      required: [a, b]
+    requires_confirmation: false
+
+entry_point: plugin.wat
