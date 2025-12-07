@@ -4,6 +4,7 @@
 mod cli;
 mod config;
 mod core;
+mod embeddings;
 mod indexer;
 mod llm;
 mod mcp;
