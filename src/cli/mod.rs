@@ -116,6 +116,48 @@ pub enum Commands {
         #[arg(long)]
         fail_on_secrets: bool,
     },
+
+    /// Plugin management commands
+    Plugin {
+        #[command(subcommand)]
+        command: PluginCommands,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum PluginCommands {
+    /// List installed plugins
+    List,
+
+    /// Install a plugin from local path
+    Install {
+        /// Path to plugin directory
+        path: String,
+    },
+
+    /// Uninstall a plugin
+    Uninstall {
+        /// Plugin ID to uninstall
+        plugin_id: String,
+    },
+
+    /// Enable a plugin
+    Enable {
+        /// Plugin ID to enable
+        plugin_id: String,
+    },
+
+    /// Disable a plugin
+    Disable {
+        /// Plugin ID to disable
+        plugin_id: String,
+    },
+
+    /// Show plugin info
+    Info {
+        /// Plugin ID
+        plugin_id: String,
+    },
 }
 
 #[derive(Subcommand)]

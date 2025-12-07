@@ -226,6 +226,95 @@ async fn main() -> Result<()> {
                 std::process::exit(1);
             }
         }
+        Some(Commands::Plugin { command }) => {
+            use plugins::PluginManager;
+            use std::path::Path;
+
+            let mut manager = PluginManager::default_manager()?;
+
+            match command {
+                cli::PluginCommands::List => {
+                    let plugins = manager.list();
+                    if plugins.is_empty() {
+                        console.info("No plugins installed");
+                    } else {
+                        println!("\nInstalled plugins:\n");
+                        for plugin in plugins {
+                            let status = if plugin.config.enabled { "enabled" } else { "disabled" };
+                            println!(
+                                "  {} v{} [{}]",
+                                plugin.manifest.name,
+                                plugin.manifest.version,
+                                status
+                            );
+                            println!("    ID: {}", plugin.manifest.id);
+                            println!("    {}\n", plugin.manifest.description);
+                        }
+                        let stats = manager.stats();
+                        println!("Total: {} ({} enabled, {} disabled)", stats.total, stats.enabled, stats.disabled);
+                    }
+                }
+                cli::PluginCommands::Install { path } => {
+                    console.info(&format!("Installing plugin from {}...", path));
+                    match manager.install_local(Path::new(&path)) {
+                        Ok(plugins::InstallResult::Installed(manifest)) => {
+                            console.success(&format!("Installed {} v{}", manifest.name, manifest.version));
+                        }
+                        Ok(plugins::InstallResult::Updated(manifest)) => {
+                            console.success(&format!("Updated {} to v{}", manifest.name, manifest.version));
+                        }
+                        Ok(plugins::InstallResult::AlreadyInstalled(id)) => {
+                            console.warn(&format!("Plugin {} is already installed", id));
+                        }
+                        Err(e) => {
+                            console.error(&format!("Failed to install: {}", e));
+                        }
+                    }
+                }
+                cli::PluginCommands::Uninstall { plugin_id } => {
+                    if manager.uninstall(&plugin_id)? {
+                        console.success(&format!("Uninstalled {}", plugin_id));
+                    } else {
+                        console.error(&format!("Plugin {} not found", plugin_id));
+                    }
+                }
+                cli::PluginCommands::Enable { plugin_id } => {
+                    if manager.enable(&plugin_id)? {
+                        console.success(&format!("Enabled {}", plugin_id));
+                    } else {
+                        console.error(&format!("Plugin {} not found", plugin_id));
+                    }
+                }
+                cli::PluginCommands::Disable { plugin_id } => {
+                    if manager.disable(&plugin_id)? {
+                        console.success(&format!("Disabled {}", plugin_id));
+                    } else {
+                        console.error(&format!("Plugin {} not found", plugin_id));
+                    }
+                }
+                cli::PluginCommands::Info { plugin_id } => {
+                    if let Some(plugin) = manager.get(&plugin_id) {
+                        println!("\nPlugin: {}", plugin.manifest.name);
+                        println!("ID: {}", plugin.manifest.id);
+                        println!("Version: {}", plugin.manifest.version);
+                        println!("Author: {}", plugin.manifest.author.name);
+                        println!("Type: {:?}", plugin.manifest.plugin_type);
+                        println!("Status: {}", if plugin.config.enabled { "enabled" } else { "disabled" });
+                        println!("\nDescription:\n  {}", plugin.manifest.description);
+                        println!("\nPermissions:");
+                        for perm in &plugin.manifest.permissions {
+                            println!("  - {:?}", perm);
+                        }
+                        println!("\nSkills:");
+                        for skill in &plugin.manifest.skills {
+                            println!("  - {}: {}", skill.name, skill.description);
+                        }
+                    } else {
+                        console.error(&format!("Plugin {} not found", plugin_id));
+                    }
+                }
+            }
+        }
         None => {
             let orchestrator = Orchestrator::new(settings, cli.auto).await?;
             orchestrator.repl().await?;

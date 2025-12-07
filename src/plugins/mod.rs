@@ -4,11 +4,14 @@
 // ============================================
 
 mod loader;
+mod manager;
 mod manifest;
 mod runtime;
 
 #[allow(unused_imports)]
 pub use loader::PluginLoader;
+#[allow(unused_imports)]
+pub use manager::{InstallResult, InstalledPlugin, ManagerConfig, ManagerStats, PluginManager, PluginSource, RegistryClient};
 #[allow(unused_imports)]
 pub use manifest::{PluginConfig, PluginManifest};
 #[allow(unused_imports)]
