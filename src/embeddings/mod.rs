@@ -7,7 +7,7 @@
 mod provider;
 mod store;
 
-pub use provider::{EmbeddingProvider, OpenAIEmbeddings};
+pub use provider::{EmbeddingProvider, MockEmbeddingProvider, OpenAIEmbeddings};
 pub use store::{EmbeddingStore, SearchResult, StoredEmbedding};
 
 use anyhow::Result;
