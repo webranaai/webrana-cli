@@ -3,31 +3,31 @@
 // Created by: SENTINEL (Team Beta)
 // ============================================
 
-use std::path::{Path, PathBuf};
+use anyhow::{anyhow, Result};
 use std::collections::HashSet;
-use anyhow::{Result, anyhow};
+use std::path::{Path, PathBuf};
 
 /// Security configuration for Webrana AI
 #[derive(Debug, Clone)]
 pub struct SecurityConfig {
     /// Working directory boundary
     pub working_dir: PathBuf,
-    
+
     /// Allow commands outside working dir
     pub allow_global_access: bool,
-    
+
     /// Commands that are always blocked
     pub blocked_commands: HashSet<String>,
-    
+
     /// Dangerous patterns to block
     pub dangerous_patterns: Vec<String>,
-    
+
     /// Sensitive files that cannot be accessed
     pub sensitive_files: Vec<String>,
-    
+
     /// Maximum file size for read operations (bytes)
     pub max_file_size: u64,
-    
+
     /// Require confirmation for destructive operations
     pub require_confirmation: bool,
 }
@@ -43,7 +43,7 @@ impl Default for SecurityConfig {
         blocked_commands.insert(":(){:|:&};:".to_string()); // Fork bomb
         blocked_commands.insert("chmod -R 777 /".to_string());
         blocked_commands.insert("chown -R".to_string());
-        
+
         let dangerous_patterns = vec![
             "rm -rf".to_string(),
             "rm -fr".to_string(),
@@ -58,7 +58,7 @@ impl Default for SecurityConfig {
             "chmod 777".to_string(),
             "chmod -R 777".to_string(),
         ];
-        
+
         let sensitive_files = vec![
             "/etc/passwd".to_string(),
             "/etc/shadow".to_string(),
@@ -71,7 +71,7 @@ impl Default for SecurityConfig {
             ".pgpass".to_string(),
             ".docker/config.json".to_string(),
         ];
-        
+
         Self {
             working_dir: std::env::current_dir().unwrap_or_default(),
             allow_global_access: false,
@@ -101,18 +101,17 @@ impl InputSanitizer {
     /// Validate and sanitize a file path
     pub fn validate_path(&self, path: &str) -> Result<PathBuf> {
         let path = Path::new(path);
-        
+
         // Resolve to absolute path
         let absolute = if path.is_absolute() {
             path.to_path_buf()
         } else {
             self.config.working_dir.join(path)
         };
-        
+
         // Canonicalize to resolve .. and symlinks
-        let canonical = absolute.canonicalize()
-            .unwrap_or_else(|_| absolute.clone());
-        
+        let canonical = absolute.canonicalize().unwrap_or_else(|_| absolute.clone());
+
         // Check if within working directory (unless global access allowed)
         if !self.config.allow_global_access {
             if !canonical.starts_with(&self.config.working_dir) {
@@ -122,7 +121,7 @@ impl InputSanitizer {
                 ));
             }
         }
-        
+
         // Check against sensitive files
         let path_str = canonical.to_string_lossy();
         for sensitive in &self.config.sensitive_files {
@@ -133,14 +132,14 @@ impl InputSanitizer {
                 ));
             }
         }
-        
+
         Ok(canonical)
     }
 
     /// Validate a shell command
     pub fn validate_command(&self, command: &str) -> Result<CommandRisk> {
         let command_lower = command.to_lowercase();
-        
+
         // Check blocked commands
         for blocked in &self.config.blocked_commands {
             if command_lower.contains(&blocked.to_lowercase()) {
@@ -150,7 +149,7 @@ impl InputSanitizer {
                 ));
             }
         }
-        
+
         // Check dangerous patterns
         for pattern in &self.config.dangerous_patterns {
             if command_lower.contains(&pattern.to_lowercase()) {
@@ -160,84 +159,124 @@ impl InputSanitizer {
                 )));
             }
         }
-        
+
         // Assess risk level
         let risk = self.assess_command_risk(command);
-        
+
         Ok(risk)
     }
 
     /// Assess the risk level of a command
     fn assess_command_risk(&self, command: &str) -> CommandRisk {
         let command_lower = command.to_lowercase();
-        
+
         // High risk patterns
         let high_risk = [
-            "sudo", "su ", "doas",
-            "rm ", "rmdir", "unlink",
-            "mv ", "cp ",
-            "chmod", "chown", "chgrp",
-            "kill", "pkill", "killall",
-            "shutdown", "reboot", "halt",
-            "systemctl", "service",
-            "iptables", "firewall",
-            "mount", "umount",
-            "fdisk", "parted",
-            "useradd", "userdel", "usermod",
+            "sudo",
+            "su ",
+            "doas",
+            "rm ",
+            "rmdir",
+            "unlink",
+            "mv ",
+            "cp ",
+            "chmod",
+            "chown",
+            "chgrp",
+            "kill",
+            "pkill",
+            "killall",
+            "shutdown",
+            "reboot",
+            "halt",
+            "systemctl",
+            "service",
+            "iptables",
+            "firewall",
+            "mount",
+            "umount",
+            "fdisk",
+            "parted",
+            "useradd",
+            "userdel",
+            "usermod",
             "passwd",
             "crontab",
-            "curl", "wget",  // Network downloads
-            "ssh", "scp",
-            "docker", "podman",
-            "git push", "git remote",
+            "curl",
+            "wget", // Network downloads
+            "ssh",
+            "scp",
+            "docker",
+            "podman",
+            "git push",
+            "git remote",
         ];
-        
+
         for pattern in high_risk {
             if command_lower.contains(pattern) {
                 return CommandRisk::High(format!("Contains high-risk command: {}", pattern));
             }
         }
-        
+
         // Medium risk patterns
         let medium_risk = [
-            "git ", "npm ", "cargo ", "pip ",
-            "make", "cmake",
-            "apt", "yum", "dnf", "brew",
-            "cat ", "head ", "tail ",
-            "grep ", "find ", "locate",
-            "echo ", "printf",
-            "touch ", "mkdir ",
-            "sed ", "awk ",
-            "tar ", "zip ", "unzip",
+            "git ", "npm ", "cargo ", "pip ", "make", "cmake", "apt", "yum", "dnf", "brew", "cat ",
+            "head ", "tail ", "grep ", "find ", "locate", "echo ", "printf", "touch ", "mkdir ",
+            "sed ", "awk ", "tar ", "zip ", "unzip",
         ];
-        
+
         for pattern in medium_risk {
             if command_lower.contains(pattern) {
                 return CommandRisk::Medium(format!("Contains modification command: {}", pattern));
             }
         }
-        
+
         // Low risk - read-only commands
         let low_risk = [
-            "ls", "pwd", "whoami", "date", "cal",
-            "cat ", "less ", "more ", "head ", "tail ",
-            "wc ", "sort ", "uniq ",
-            "ps ", "top", "htop",
-            "df ", "du ",
-            "env", "printenv",
-            "which ", "whereis ", "type ",
-            "file ", "stat ",
-            "git status", "git log", "git diff", "git branch",
-            "cargo check", "cargo test", "cargo build",
-            "npm list", "npm info",
+            "ls",
+            "pwd",
+            "whoami",
+            "date",
+            "cal",
+            "cat ",
+            "less ",
+            "more ",
+            "head ",
+            "tail ",
+            "wc ",
+            "sort ",
+            "uniq ",
+            "ps ",
+            "top",
+            "htop",
+            "df ",
+            "du ",
+            "env",
+            "printenv",
+            "which ",
+            "whereis ",
+            "type ",
+            "file ",
+            "stat ",
+            "git status",
+            "git log",
+            "git diff",
+            "git branch",
+            "cargo check",
+            "cargo test",
+            "cargo build",
+            "npm list",
+            "npm info",
         ];
-        
+
         for pattern in low_risk {
-            if command_lower.starts_with(pattern) || command_lower.contains(&format!(" {}", pattern)) {
+            if command_lower.starts_with(pattern)
+                || command_lower.contains(&format!(" {}", pattern))
+            {
                 return CommandRisk::Low;
             }
         }
-        
+
         // Default to medium for unknown commands
         CommandRisk::Medium("Unknown command - treating as medium risk".to_string())
     }
@@ -245,7 +284,7 @@ impl InputSanitizer {
     /// Sanitize output to remove sensitive information
     pub fn sanitize_output(&self, output: &str) -> String {
         let mut sanitized = output.to_string();
-        
+
         // Patterns to redact
         let redact_patterns = [
             // API keys
@@ -253,7 +292,10 @@ impl InputSanitizer {
             (r"api[_-]?key[=:][\s]*[\w-]+", "[REDACTED_API_KEY]"),
             // AWS
             (r"AKIA[0-9A-Z]{16}", "[REDACTED_AWS_KEY]"),
-            (r"aws_secret_access_key[\s]*=[\s]*\S+", "[REDACTED_AWS_SECRET]"),
+            (
+                r"aws_secret_access_key[\s]*=[\s]*\S+",
+                "[REDACTED_AWS_SECRET]",
+            ),
             // Generic secrets
             (r"password[=:][\s]*\S+", "[REDACTED_PASSWORD]"),
             (r"secret[=:][\s]*\S+", "[REDACTED_SECRET]"),
@@ -261,13 +303,13 @@ impl InputSanitizer {
             // SSH keys
             (r"-----BEGIN .+ PRIVATE KEY-----", "[REDACTED_PRIVATE_KEY]"),
         ];
-        
+
         for (pattern, replacement) in redact_patterns {
             if let Ok(re) = regex::Regex::new(pattern) {
                 sanitized = re.replace_all(&sanitized, replacement).to_string();
             }
         }
-        
+
         sanitized
     }
 
@@ -299,11 +341,11 @@ impl CommandRisk {
     pub fn requires_confirmation(&self) -> bool {
         matches!(self, CommandRisk::High(_))
     }
-    
+
     pub fn is_blocked(&self) -> bool {
         matches!(self, CommandRisk::Blocked(_))
     }
-    
+
     pub fn description(&self) -> String {
         match self {
             CommandRisk::Low => "Low risk - safe to execute".to_string(),
@@ -321,16 +363,16 @@ impl ConfirmationPrompt {
     /// Display confirmation prompt and get user response
     pub fn confirm(message: &str) -> bool {
         use std::io::{self, Write};
-        
+
         print!("\n⚠️  {} [y/N]: ", message);
         io::stdout().flush().unwrap();
-        
+
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
-        
+
         matches!(input.trim().to_lowercase().as_str(), "y" | "yes")
     }
-    
+
     /// Confirm command execution
     pub fn confirm_command(command: &str, risk: &CommandRisk) -> bool {
         let message = format!(
@@ -340,12 +382,12 @@ impl ConfirmationPrompt {
         );
         Self::confirm(&message)
     }
-    
+
     /// Confirm file write
     pub fn confirm_write(path: &str) -> bool {
         Self::confirm(&format!("Write to file: {}?", path))
     }
-    
+
     /// Confirm file delete
     pub fn confirm_delete(path: &str) -> bool {
         Self::confirm(&format!("DELETE file: {}? This cannot be undone", path))
@@ -359,25 +401,25 @@ mod tests {
     #[test]
     fn test_command_risk_assessment() {
         let sanitizer = InputSanitizer::with_default();
-        
+
         // Low risk
         assert!(matches!(
             sanitizer.validate_command("ls -la"),
             Ok(CommandRisk::Low)
         ));
-        
+
         // Medium risk
         assert!(matches!(
             sanitizer.validate_command("cargo build"),
             Ok(CommandRisk::Medium(_))
         ));
-        
+
         // High risk - use relative path to avoid matching "rm -rf /"
         assert!(matches!(
             sanitizer.validate_command("sudo rm -rf ./tmp/test"),
             Ok(CommandRisk::High(_))
         ));
-        
+
         // Blocked
         assert!(sanitizer.validate_command("rm -rf /").is_err());
     }
@@ -385,7 +427,7 @@ mod tests {
     #[test]
     fn test_path_validation() {
         let sanitizer = InputSanitizer::with_default();
-        
+
         // Should block sensitive files
         assert!(sanitizer.validate_path("/etc/passwd").is_err());
         assert!(sanitizer.validate_path("~/.ssh/id_rsa").is_err());

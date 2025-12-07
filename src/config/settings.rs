@@ -67,50 +67,68 @@ pub struct SafetyConfig {
     pub blocked_paths: Vec<String>,
 }
 
-fn default_temperature() -> f32 { 0.7 }
-fn default_max_tokens() -> u32 { 4096 }
-fn default_true() -> bool { true }
+fn default_temperature() -> f32 {
+    0.7
+}
+fn default_max_tokens() -> u32 {
+    4096
+}
+fn default_true() -> bool {
+    true
+}
 
 impl Default for Settings {
     fn default() -> Self {
         let mut models = HashMap::new();
-        models.insert("claude".to_string(), ModelConfig {
-            provider: "anthropic".to_string(),
-            api_key: None,
-            api_key_env: Some("ANTHROPIC_API_KEY".to_string()),
-            base_url: None,
-            model: "claude-sonnet-4-20250514".to_string(),
-            temperature: 0.7,
-            max_tokens: 4096,
-        });
-        models.insert("gpt".to_string(), ModelConfig {
-            provider: "openai".to_string(),
-            api_key: None,
-            api_key_env: Some("OPENAI_API_KEY".to_string()),
-            base_url: None,
-            model: "gpt-4o".to_string(),
-            temperature: 0.7,
-            max_tokens: 4096,
-        });
-        models.insert("ollama".to_string(), ModelConfig {
-            provider: "ollama".to_string(),
-            api_key: None,
-            api_key_env: None,
-            base_url: Some("http://localhost:11434".to_string()),
-            model: "llama3".to_string(),
-            temperature: 0.7,
-            max_tokens: 4096,
-        });
+        models.insert(
+            "claude".to_string(),
+            ModelConfig {
+                provider: "anthropic".to_string(),
+                api_key: None,
+                api_key_env: Some("ANTHROPIC_API_KEY".to_string()),
+                base_url: None,
+                model: "claude-sonnet-4-20250514".to_string(),
+                temperature: 0.7,
+                max_tokens: 4096,
+            },
+        );
+        models.insert(
+            "gpt".to_string(),
+            ModelConfig {
+                provider: "openai".to_string(),
+                api_key: None,
+                api_key_env: Some("OPENAI_API_KEY".to_string()),
+                base_url: None,
+                model: "gpt-4o".to_string(),
+                temperature: 0.7,
+                max_tokens: 4096,
+            },
+        );
+        models.insert(
+            "ollama".to_string(),
+            ModelConfig {
+                provider: "ollama".to_string(),
+                api_key: None,
+                api_key_env: None,
+                base_url: Some("http://localhost:11434".to_string()),
+                model: "llama3".to_string(),
+                temperature: 0.7,
+                max_tokens: 4096,
+            },
+        );
 
         let mut agents = HashMap::new();
-        agents.insert("nexus".to_string(), AgentConfig {
-            name: "NEXUS".to_string(),
-            description: "Orchestrator - Task decomposition and routing".to_string(),
-            system_prompt: include_str!("../../agents/nexus.txt").to_string(),
-            model: "claude".to_string(),
-            skills: vec!["*".to_string()],
-            temperature: 0.3,
-        });
+        agents.insert(
+            "nexus".to_string(),
+            AgentConfig {
+                name: "NEXUS".to_string(),
+                description: "Orchestrator - Task decomposition and routing".to_string(),
+                system_prompt: include_str!("../../agents/nexus.txt").to_string(),
+                model: "claude".to_string(),
+                skills: vec!["*".to_string()],
+                temperature: 0.3,
+            },
+        );
 
         Self {
             models,
@@ -129,10 +147,9 @@ impl Settings {
         let config_path = Self::config_path()?;
 
         if config_path.exists() {
-            let content = fs::read_to_string(&config_path)
-                .context("Failed to read config file")?;
-            let settings: Settings = toml::from_str(&content)
-                .context("Failed to parse config file")?;
+            let content = fs::read_to_string(&config_path).context("Failed to read config file")?;
+            let settings: Settings =
+                toml::from_str(&content).context("Failed to parse config file")?;
             Ok(settings)
         } else {
             let settings = Settings::default();

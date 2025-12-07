@@ -1,7 +1,7 @@
+use anyhow::Result;
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
-use anyhow::Result;
 
 use super::index::{FileEntry, FileType};
 
@@ -76,7 +76,8 @@ impl FileWalker {
                 Err(_) => continue,
             };
 
-            let relative_path = path.strip_prefix(&self.root)
+            let relative_path = path
+                .strip_prefix(&self.root)
                 .unwrap_or(&path)
                 .to_string_lossy()
                 .to_string();
@@ -90,8 +91,7 @@ impl FileWalker {
                 });
                 self.walk_dir(&path, entries, depth + 1)?;
             } else if metadata.is_file() {
-                let extension = path.extension()
-                    .map(|e| e.to_string_lossy().to_string());
+                let extension = path.extension().map(|e| e.to_string_lossy().to_string());
                 let file_type = Self::detect_file_type(&extension);
 
                 entries.push(FileEntry {
@@ -115,7 +115,8 @@ impl FileWalker {
             return true;
         }
 
-        let relative = path.strip_prefix(&self.root)
+        let relative = path
+            .strip_prefix(&self.root)
             .unwrap_or(path)
             .to_string_lossy()
             .to_string();
@@ -141,26 +142,28 @@ impl FileWalker {
             }
         }
 
-        path == pattern || path.starts_with(&format!("{}/", pattern)) || path.ends_with(&format!("/{}", pattern))
+        path == pattern
+            || path.starts_with(&format!("{}/", pattern))
+            || path.ends_with(&format!("/{}", pattern))
     }
 
     fn detect_file_type(extension: &Option<String>) -> FileType {
         match extension.as_deref() {
-            Some("rs") | Some("py") | Some("js") | Some("ts") | Some("go") |
-            Some("java") | Some("c") | Some("cpp") | Some("h") | Some("hpp") |
-            Some("rb") | Some("php") | Some("swift") | Some("kt") | Some("scala") |
-            Some("jsx") | Some("tsx") | Some("vue") | Some("svelte") => FileType::Code,
+            Some("rs") | Some("py") | Some("js") | Some("ts") | Some("go") | Some("java")
+            | Some("c") | Some("cpp") | Some("h") | Some("hpp") | Some("rb") | Some("php")
+            | Some("swift") | Some("kt") | Some("scala") | Some("jsx") | Some("tsx")
+            | Some("vue") | Some("svelte") => FileType::Code,
 
             Some("md") | Some("txt") | Some("rst") | Some("adoc") => FileType::Document,
 
-            Some("json") | Some("yaml") | Some("yml") | Some("toml") | Some("xml") |
-            Some("ini") | Some("conf") | Some("cfg") => FileType::Config,
+            Some("json") | Some("yaml") | Some("yml") | Some("toml") | Some("xml")
+            | Some("ini") | Some("conf") | Some("cfg") => FileType::Config,
 
-            Some("sh") | Some("bash") | Some("zsh") | Some("fish") | Some("ps1") |
-            Some("bat") | Some("cmd") => FileType::Script,
+            Some("sh") | Some("bash") | Some("zsh") | Some("fish") | Some("ps1") | Some("bat")
+            | Some("cmd") => FileType::Script,
 
-            Some("png") | Some("jpg") | Some("jpeg") | Some("gif") | Some("svg") |
-            Some("ico") | Some("webp") => FileType::Image,
+            Some("png") | Some("jpg") | Some("jpeg") | Some("gif") | Some("svg") | Some("ico")
+            | Some("webp") => FileType::Image,
 
             Some("css") | Some("scss") | Some("sass") | Some("less") => FileType::Style,
 

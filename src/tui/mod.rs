@@ -9,16 +9,16 @@
 #[cfg(feature = "tui")]
 mod app;
 #[cfg(feature = "tui")]
-mod ui;
-#[cfg(feature = "tui")]
 mod event;
+#[cfg(feature = "tui")]
+mod ui;
 
 #[cfg(feature = "tui")]
 pub use app::{App, AppState};
 #[cfg(feature = "tui")]
-pub use ui::draw;
-#[cfg(feature = "tui")]
 pub use event::{Event, EventHandler};
+#[cfg(feature = "tui")]
+pub use ui::draw;
 
 use anyhow::Result;
 

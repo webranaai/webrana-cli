@@ -15,17 +15,17 @@ mod llm_tests {
             "role": "system",
             "content": "You are a helpful assistant."
         });
-        
+
         let user_msg = json!({
             "role": "user",
             "content": "Hello!"
         });
-        
+
         let assistant_msg = json!({
             "role": "assistant",
             "content": "Hi there!"
         });
-        
+
         assert_eq!(system_msg["role"], "system");
         assert_eq!(user_msg["role"], "user");
         assert_eq!(assistant_msg["role"], "assistant");
@@ -41,7 +41,7 @@ mod llm_tests {
                 "path": "/tmp/test.txt"
             }
         });
-        
+
         assert_eq!(tool_call["id"], "call_12345");
         assert_eq!(tool_call["name"], "read_file");
         assert!(tool_call["arguments"].is_object());
@@ -64,7 +64,7 @@ mod llm_tests {
                 "required": ["command"]
             }
         });
-        
+
         assert_eq!(tool_def["name"], "shell_execute");
         assert!(tool_def["description"].is_string());
         assert!(tool_def["input_schema"]["properties"].is_object());
@@ -78,7 +78,7 @@ mod llm_tests {
             "tool_calls": [],
             "stop_reason": "end_turn"
         });
-        
+
         assert!(response["content"].is_string());
         assert!(response["tool_calls"].is_array());
         assert_eq!(response["stop_reason"], "end_turn");
@@ -103,7 +103,7 @@ mod llm_tests {
             ],
             "stop_reason": "tool_use"
         });
-        
+
         let tool_calls = response["tool_calls"].as_array().unwrap();
         assert_eq!(tool_calls.len(), 2);
         assert_eq!(tool_calls[0]["name"], "read_file");
@@ -121,7 +121,7 @@ mod llm_tests {
                 {"role": "user", "content": "Hello!"}
             ]
         });
-        
+
         assert!(request["model"].is_string());
         assert!(request["max_tokens"].is_number());
         assert!(request["system"].is_string());
@@ -140,7 +140,7 @@ mod llm_tests {
             "temperature": 0.7,
             "max_tokens": 4096
         });
-        
+
         assert_eq!(request["model"], "gpt-4o");
         let messages = request["messages"].as_array().unwrap();
         assert_eq!(messages.len(), 2);
@@ -158,7 +158,7 @@ mod llm_tests {
             ],
             "stream": false
         });
-        
+
         assert_eq!(request["model"], "llama3");
         assert_eq!(request["stream"], false);
     }
@@ -171,7 +171,7 @@ mod llm_tests {
             "type": "tool_result",
             "content": "File contents: Hello, World!"
         });
-        
+
         assert!(tool_result["tool_use_id"].is_string());
         assert_eq!(tool_result["type"], "tool_result");
     }
@@ -185,9 +185,9 @@ mod llm_tests {
             json!({"role": "user", "content": "Give me an example"}),
             json!({"role": "assistant", "content": "Here's a simple example..."}),
         ];
-        
+
         assert_eq!(history.len(), 4);
-        
+
         // Verify alternating roles
         for (i, msg) in history.iter().enumerate() {
             if i % 2 == 0 {
@@ -207,7 +207,7 @@ mod llm_tests {
             json!({"type": "content_block_delta", "delta": {"text": "World"}}),
             json!({"type": "message_stop"}),
         ];
-        
+
         let mut full_text = String::new();
         for chunk in &chunks {
             if let Some(delta) = chunk.get("delta") {
@@ -216,7 +216,7 @@ mod llm_tests {
                 }
             }
         }
-        
+
         assert_eq!(full_text, "Hello World");
     }
 
@@ -229,7 +229,7 @@ mod llm_tests {
                 "message": "API key is required"
             }
         });
-        
+
         assert!(error_response["error"].is_object());
         assert!(error_response["error"]["message"].is_string());
     }

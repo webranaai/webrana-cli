@@ -3,19 +3,18 @@ use async_trait::async_trait;
 use serde_json::{json, Value};
 use std::process::Command;
 
-use crate::config::Settings;
 use super::registry::{Skill, SkillDefinition};
+use crate::config::Settings;
 
 fn run_git_command(args: &[&str], cwd: Option<&str>) -> Result<String> {
     let mut cmd = Command::new("git");
     cmd.args(args);
-    
+
     if let Some(dir) = cwd {
         cmd.current_dir(dir);
     }
 
-    let output = cmd.output()
-        .context("Failed to execute git command")?;
+    let output = cmd.output().context("Failed to execute git command")?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -37,7 +36,8 @@ impl Skill for GitStatusSkill {
     fn definition(&self) -> SkillDefinition {
         SkillDefinition {
             name: "git_status".to_string(),
-            description: "Show the working tree status (modified, staged, untracked files)".to_string(),
+            description: "Show the working tree status (modified, staged, untracked files)"
+                .to_string(),
             parameters: json!({
                 "type": "object",
                 "properties": {
@@ -148,7 +148,7 @@ impl Skill for GitLogSkill {
 
         let count_str = format!("-{}", count);
         let mut git_args = vec!["log", &count_str];
-        
+
         if oneline {
             git_args.push("--oneline");
         }
@@ -185,7 +185,8 @@ impl Skill for GitCommitSkill {
 
     async fn execute(&self, args: &Value, _settings: &Settings) -> Result<String> {
         let path = args["path"].as_str();
-        let message = args["message"].as_str()
+        let message = args["message"]
+            .as_str()
             .context("Commit message is required")?;
 
         run_git_command(&["commit", "-m", message], path)
@@ -220,7 +221,8 @@ impl Skill for GitAddSkill {
 
     async fn execute(&self, args: &Value, _settings: &Settings) -> Result<String> {
         let path = args["path"].as_str();
-        let files = args["files"].as_str()
+        let files = args["files"]
+            .as_str()
             .context("Files argument is required")?;
 
         run_git_command(&["add", files], path)?;
@@ -318,8 +320,7 @@ impl Skill for GitCheckoutSkill {
 
     async fn execute(&self, args: &Value, _settings: &Settings) -> Result<String> {
         let path = args["path"].as_str();
-        let target = args["target"].as_str()
-            .context("Target is required")?;
+        let target = args["target"].as_str().context("Target is required")?;
         let create_branch = args["create_branch"].as_bool().unwrap_or(false);
 
         if create_branch {

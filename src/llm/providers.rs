@@ -1,5 +1,5 @@
-use async_trait::async_trait;
 use anyhow::Result;
+use async_trait::async_trait;
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::io::{self, Write};
@@ -41,22 +41,39 @@ pub struct ChatResponse {
 
 impl Message {
     pub fn system(content: impl Into<String>) -> Self {
-        Self { role: Role::System, content: content.into() }
+        Self {
+            role: Role::System,
+            content: content.into(),
+        }
     }
 
     pub fn user(content: impl Into<String>) -> Self {
-        Self { role: Role::User, content: content.into() }
+        Self {
+            role: Role::User,
+            content: content.into(),
+        }
     }
 
     pub fn assistant(content: impl Into<String>) -> Self {
-        Self { role: Role::Assistant, content: content.into() }
+        Self {
+            role: Role::Assistant,
+            content: content.into(),
+        }
     }
 }
 
 #[async_trait]
 pub trait Provider: Send + Sync {
-    async fn chat(&self, messages: Vec<Message>, tools: Option<Vec<ToolDefinition>>) -> Result<ChatResponse>;
-    async fn chat_stream(&self, messages: Vec<Message>, tools: Option<Vec<ToolDefinition>>) -> Result<ChatResponse>;
+    async fn chat(
+        &self,
+        messages: Vec<Message>,
+        tools: Option<Vec<ToolDefinition>>,
+    ) -> Result<ChatResponse>;
+    async fn chat_stream(
+        &self,
+        messages: Vec<Message>,
+        tools: Option<Vec<ToolDefinition>>,
+    ) -> Result<ChatResponse>;
     fn name(&self) -> &str;
 }
 
@@ -72,21 +89,31 @@ pub struct AnthropicProvider {
 
 impl AnthropicProvider {
     pub fn new(api_key: String, model: String, max_tokens: u32) -> Self {
-        Self { api_key, model, max_tokens }
+        Self {
+            api_key,
+            model,
+            max_tokens,
+        }
     }
 }
 
 #[async_trait]
 impl Provider for AnthropicProvider {
-    async fn chat(&self, messages: Vec<Message>, tools: Option<Vec<ToolDefinition>>) -> Result<ChatResponse> {
+    async fn chat(
+        &self,
+        messages: Vec<Message>,
+        tools: Option<Vec<ToolDefinition>>,
+    ) -> Result<ChatResponse> {
         let client = reqwest::Client::new();
 
-        let system_msg = messages.iter()
+        let system_msg = messages
+            .iter()
             .find(|m| m.role == Role::System)
             .map(|m| m.content.clone())
             .unwrap_or_default();
 
-        let chat_messages: Vec<serde_json::Value> = messages.iter()
+        let chat_messages: Vec<serde_json::Value> = messages
+            .iter()
             .filter(|m| m.role != Role::System)
             .map(|m| {
                 serde_json::json!({
@@ -108,13 +135,16 @@ impl Provider for AnthropicProvider {
         });
 
         if let Some(tool_defs) = tools {
-            let tools_json: Vec<serde_json::Value> = tool_defs.iter().map(|t| {
-                serde_json::json!({
-                    "name": t.name,
-                    "description": t.description,
-                    "input_schema": t.input_schema
+            let tools_json: Vec<serde_json::Value> = tool_defs
+                .iter()
+                .map(|t| {
+                    serde_json::json!({
+                        "name": t.name,
+                        "description": t.description,
+                        "input_schema": t.input_schema
+                    })
                 })
-            }).collect();
+                .collect();
             body["tools"] = serde_json::json!(tools_json);
         }
 
@@ -128,7 +158,7 @@ impl Provider for AnthropicProvider {
             .await?;
 
         let json: serde_json::Value = response.json().await?;
-        
+
         let mut content = String::new();
         let mut tool_calls = Vec::new();
 
@@ -154,18 +184,28 @@ impl Provider for AnthropicProvider {
 
         let stop_reason = json["stop_reason"].as_str().map(String::from);
 
-        Ok(ChatResponse { content, tool_calls, stop_reason })
+        Ok(ChatResponse {
+            content,
+            tool_calls,
+            stop_reason,
+        })
     }
 
-    async fn chat_stream(&self, messages: Vec<Message>, tools: Option<Vec<ToolDefinition>>) -> Result<ChatResponse> {
+    async fn chat_stream(
+        &self,
+        messages: Vec<Message>,
+        tools: Option<Vec<ToolDefinition>>,
+    ) -> Result<ChatResponse> {
         let client = reqwest::Client::new();
 
-        let system_msg = messages.iter()
+        let system_msg = messages
+            .iter()
             .find(|m| m.role == Role::System)
             .map(|m| m.content.clone())
             .unwrap_or_default();
 
-        let chat_messages: Vec<serde_json::Value> = messages.iter()
+        let chat_messages: Vec<serde_json::Value> = messages
+            .iter()
             .filter(|m| m.role != Role::System)
             .map(|m| {
                 serde_json::json!({
@@ -188,13 +228,16 @@ impl Provider for AnthropicProvider {
         });
 
         if let Some(tool_defs) = tools {
-            let tools_json: Vec<serde_json::Value> = tool_defs.iter().map(|t| {
-                serde_json::json!({
-                    "name": t.name,
-                    "description": t.description,
-                    "input_schema": t.input_schema
+            let tools_json: Vec<serde_json::Value> = tool_defs
+                .iter()
+                .map(|t| {
+                    serde_json::json!({
+                        "name": t.name,
+                        "description": t.description,
+                        "input_schema": t.input_schema
+                    })
                 })
-            }).collect();
+                .collect();
             body["tools"] = serde_json::json!(tools_json);
         }
 
@@ -234,23 +277,38 @@ impl Provider for AnthropicProvider {
                                 Some("content_block_start") => {
                                     if json["content_block"]["type"].as_str() == Some("tool_use") {
                                         current_tool = Some((
-                                            json["content_block"]["id"].as_str().unwrap_or("").to_string(),
-                                            json["content_block"]["name"].as_str().unwrap_or("").to_string(),
+                                            json["content_block"]["id"]
+                                                .as_str()
+                                                .unwrap_or("")
+                                                .to_string(),
+                                            json["content_block"]["name"]
+                                                .as_str()
+                                                .unwrap_or("")
+                                                .to_string(),
                                             String::new(),
                                         ));
                                     }
                                 }
                                 Some("content_block_delta") => {
                                     if let Some(delta) = json["delta"].as_object() {
-                                        if delta.get("type").and_then(|t| t.as_str()) == Some("text_delta") {
-                                            if let Some(text) = delta.get("text").and_then(|t| t.as_str()) {
+                                        if delta.get("type").and_then(|t| t.as_str())
+                                            == Some("text_delta")
+                                        {
+                                            if let Some(text) =
+                                                delta.get("text").and_then(|t| t.as_str())
+                                            {
                                                 print!("{}", text);
                                                 io::stdout().flush().ok();
                                                 content.push_str(text);
                                             }
-                                        } else if delta.get("type").and_then(|t| t.as_str()) == Some("input_json_delta") {
+                                        } else if delta.get("type").and_then(|t| t.as_str())
+                                            == Some("input_json_delta")
+                                        {
                                             if let Some((_, _, ref mut args)) = current_tool {
-                                                if let Some(partial) = delta.get("partial_json").and_then(|p| p.as_str()) {
+                                                if let Some(partial) = delta
+                                                    .get("partial_json")
+                                                    .and_then(|p| p.as_str())
+                                                {
                                                     args.push_str(partial);
                                                 }
                                             }
@@ -259,8 +317,13 @@ impl Provider for AnthropicProvider {
                                 }
                                 Some("content_block_stop") => {
                                     if let Some((id, name, args_str)) = current_tool.take() {
-                                        let arguments = serde_json::from_str(&args_str).unwrap_or(serde_json::json!({}));
-                                        tool_calls.push(ToolCall { id, name, arguments });
+                                        let arguments = serde_json::from_str(&args_str)
+                                            .unwrap_or(serde_json::json!({}));
+                                        tool_calls.push(ToolCall {
+                                            id,
+                                            name,
+                                            arguments,
+                                        });
                                     }
                                 }
                                 Some("message_delta") => {
@@ -277,7 +340,11 @@ impl Provider for AnthropicProvider {
         }
 
         println!(); // New line after streaming
-        Ok(ChatResponse { content, tool_calls, stop_reason })
+        Ok(ChatResponse {
+            content,
+            tool_calls,
+            stop_reason,
+        })
     }
 
     fn name(&self) -> &str {
@@ -307,10 +374,15 @@ impl OpenAIProvider {
 
 #[async_trait]
 impl Provider for OpenAIProvider {
-    async fn chat(&self, messages: Vec<Message>, tools: Option<Vec<ToolDefinition>>) -> Result<ChatResponse> {
+    async fn chat(
+        &self,
+        messages: Vec<Message>,
+        tools: Option<Vec<ToolDefinition>>,
+    ) -> Result<ChatResponse> {
         let client = reqwest::Client::new();
 
-        let chat_messages: Vec<serde_json::Value> = messages.iter()
+        let chat_messages: Vec<serde_json::Value> = messages
+            .iter()
             .map(|m| {
                 serde_json::json!({
                     "role": match m.role {
@@ -329,16 +401,19 @@ impl Provider for OpenAIProvider {
         });
 
         if let Some(tool_defs) = tools {
-            let tools_json: Vec<serde_json::Value> = tool_defs.iter().map(|t| {
-                serde_json::json!({
-                    "type": "function",
-                    "function": {
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.input_schema
-                    }
+            let tools_json: Vec<serde_json::Value> = tool_defs
+                .iter()
+                .map(|t| {
+                    serde_json::json!({
+                        "type": "function",
+                        "function": {
+                            "name": t.name,
+                            "description": t.description,
+                            "parameters": t.input_schema
+                        }
+                    })
                 })
-            }).collect();
+                .collect();
             body["tools"] = serde_json::json!(tools_json);
         }
 
@@ -351,7 +426,7 @@ impl Provider for OpenAIProvider {
             .await?;
 
         let json: serde_json::Value = response.json().await?;
-        
+
         let content = json["choices"][0]["message"]["content"]
             .as_str()
             .unwrap_or("")
@@ -364,21 +439,33 @@ impl Provider for OpenAIProvider {
                     id: call["id"].as_str().unwrap_or("").to_string(),
                     name: call["function"]["name"].as_str().unwrap_or("").to_string(),
                     arguments: serde_json::from_str(
-                        call["function"]["arguments"].as_str().unwrap_or("{}")
-                    ).unwrap_or(serde_json::json!({})),
+                        call["function"]["arguments"].as_str().unwrap_or("{}"),
+                    )
+                    .unwrap_or(serde_json::json!({})),
                 });
             }
         }
 
-        let stop_reason = json["choices"][0]["finish_reason"].as_str().map(String::from);
+        let stop_reason = json["choices"][0]["finish_reason"]
+            .as_str()
+            .map(String::from);
 
-        Ok(ChatResponse { content, tool_calls, stop_reason })
+        Ok(ChatResponse {
+            content,
+            tool_calls,
+            stop_reason,
+        })
     }
 
-    async fn chat_stream(&self, messages: Vec<Message>, tools: Option<Vec<ToolDefinition>>) -> Result<ChatResponse> {
+    async fn chat_stream(
+        &self,
+        messages: Vec<Message>,
+        tools: Option<Vec<ToolDefinition>>,
+    ) -> Result<ChatResponse> {
         let client = reqwest::Client::new();
 
-        let chat_messages: Vec<serde_json::Value> = messages.iter()
+        let chat_messages: Vec<serde_json::Value> = messages
+            .iter()
             .map(|m| {
                 serde_json::json!({
                     "role": match m.role {
@@ -398,16 +485,19 @@ impl Provider for OpenAIProvider {
         });
 
         if let Some(tool_defs) = tools {
-            let tools_json: Vec<serde_json::Value> = tool_defs.iter().map(|t| {
-                serde_json::json!({
-                    "type": "function",
-                    "function": {
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.input_schema
-                    }
+            let tools_json: Vec<serde_json::Value> = tool_defs
+                .iter()
+                .map(|t| {
+                    serde_json::json!({
+                        "type": "function",
+                        "function": {
+                            "name": t.name,
+                            "description": t.description,
+                            "parameters": t.input_schema
+                        }
+                    })
                 })
-            }).collect();
+                .collect();
             body["tools"] = serde_json::json!(tools_json);
         }
 
@@ -422,7 +512,8 @@ impl Provider for OpenAIProvider {
         let mut stream = response.bytes_stream();
         let mut content = String::new();
         let mut tool_calls: Vec<ToolCall> = Vec::new();
-        let mut tool_call_map: std::collections::HashMap<usize, (String, String, String)> = std::collections::HashMap::new();
+        let mut tool_call_map: std::collections::HashMap<usize, (String, String, String)> =
+            std::collections::HashMap::new();
         let mut stop_reason = None;
         let mut buffer = String::new();
 
@@ -449,10 +540,11 @@ impl Provider for OpenAIProvider {
                             }
 
                             // Tool calls
-                            if let Some(calls) = delta.get("tool_calls").and_then(|t| t.as_array()) {
+                            if let Some(calls) = delta.get("tool_calls").and_then(|t| t.as_array())
+                            {
                                 for call in calls {
                                     let idx = call["index"].as_u64().unwrap_or(0) as usize;
-                                    
+
                                     let entry = tool_call_map.entry(idx).or_insert_with(|| {
                                         (
                                             call["id"].as_str().unwrap_or("").to_string(),
@@ -484,11 +576,19 @@ impl Provider for OpenAIProvider {
         // Convert tool_call_map to tool_calls vec
         for (_, (id, name, args_str)) in tool_call_map {
             let arguments = serde_json::from_str(&args_str).unwrap_or(serde_json::json!({}));
-            tool_calls.push(ToolCall { id, name, arguments });
+            tool_calls.push(ToolCall {
+                id,
+                name,
+                arguments,
+            });
         }
 
         println!(); // New line after streaming
-        Ok(ChatResponse { content, tool_calls, stop_reason })
+        Ok(ChatResponse {
+            content,
+            tool_calls,
+            stop_reason,
+        })
     }
 
     fn name(&self) -> &str {
@@ -513,10 +613,15 @@ impl OllamaProvider {
 
 #[async_trait]
 impl Provider for OllamaProvider {
-    async fn chat(&self, messages: Vec<Message>, _tools: Option<Vec<ToolDefinition>>) -> Result<ChatResponse> {
+    async fn chat(
+        &self,
+        messages: Vec<Message>,
+        _tools: Option<Vec<ToolDefinition>>,
+    ) -> Result<ChatResponse> {
         let client = reqwest::Client::new();
 
-        let chat_messages: Vec<serde_json::Value> = messages.iter()
+        let chat_messages: Vec<serde_json::Value> = messages
+            .iter()
             .map(|m| {
                 serde_json::json!({
                     "role": match m.role {
@@ -542,23 +647,28 @@ impl Provider for OllamaProvider {
             .await?;
 
         let json: serde_json::Value = response.json().await?;
-        
+
         let content = json["message"]["content"]
             .as_str()
             .unwrap_or("")
             .to_string();
 
-        Ok(ChatResponse { 
-            content, 
-            tool_calls: Vec::new(), 
-            stop_reason: Some("stop".to_string()) 
+        Ok(ChatResponse {
+            content,
+            tool_calls: Vec::new(),
+            stop_reason: Some("stop".to_string()),
         })
     }
 
-    async fn chat_stream(&self, messages: Vec<Message>, _tools: Option<Vec<ToolDefinition>>) -> Result<ChatResponse> {
+    async fn chat_stream(
+        &self,
+        messages: Vec<Message>,
+        _tools: Option<Vec<ToolDefinition>>,
+    ) -> Result<ChatResponse> {
         let client = reqwest::Client::new();
 
-        let chat_messages: Vec<serde_json::Value> = messages.iter()
+        let chat_messages: Vec<serde_json::Value> = messages
+            .iter()
             .map(|m| {
                 serde_json::json!({
                     "role": match m.role {
@@ -589,7 +699,7 @@ impl Provider for OllamaProvider {
         while let Some(chunk) = stream.next().await {
             let chunk = chunk?;
             let text = String::from_utf8_lossy(&chunk);
-            
+
             for line in text.lines() {
                 if let Ok(json) = serde_json::from_str::<serde_json::Value>(line) {
                     if let Some(msg_content) = json["message"]["content"].as_str() {
@@ -602,10 +712,10 @@ impl Provider for OllamaProvider {
         }
 
         println!();
-        Ok(ChatResponse { 
-            content, 
-            tool_calls: Vec::new(), 
-            stop_reason: Some("stop".to_string()) 
+        Ok(ChatResponse {
+            content,
+            tool_calls: Vec::new(),
+            stop_reason: Some("stop".to_string()),
         })
     }
 

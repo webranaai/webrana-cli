@@ -1,7 +1,7 @@
+use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use anyhow::{Result, anyhow};
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EditOperation {
@@ -26,7 +26,7 @@ impl EditFileSkill {
 
     pub fn edit_file(&self, path: &str, search: &str, replace: &str) -> Result<EditResult> {
         let file_path = Path::new(path);
-        
+
         if !file_path.exists() {
             return Ok(EditResult {
                 success: false,
@@ -37,7 +37,7 @@ impl EditFileSkill {
         }
 
         let content = fs::read_to_string(file_path)?;
-        
+
         if !content.contains(search) {
             return Ok(EditResult {
                 success: false,
@@ -49,7 +49,7 @@ impl EditFileSkill {
 
         let changes = content.matches(search).count();
         let new_content = content.replace(search, replace);
-        
+
         fs::write(file_path, &new_content)?;
 
         Ok(EditResult {
@@ -62,7 +62,7 @@ impl EditFileSkill {
 
     pub fn edit_file_once(&self, path: &str, search: &str, replace: &str) -> Result<EditResult> {
         let file_path = Path::new(path);
-        
+
         if !file_path.exists() {
             return Ok(EditResult {
                 success: false,
@@ -73,7 +73,7 @@ impl EditFileSkill {
         }
 
         let content = fs::read_to_string(file_path)?;
-        
+
         if !content.contains(search) {
             return Ok(EditResult {
                 success: false,
@@ -96,7 +96,7 @@ impl EditFileSkill {
 
     pub fn apply_diff(&self, path: &str, diff_content: &str) -> Result<EditResult> {
         let operations = self.parse_diff(diff_content)?;
-        
+
         if operations.is_empty() {
             return Ok(EditResult {
                 success: false,
@@ -175,9 +175,14 @@ impl EditFileSkill {
         Ok(operations)
     }
 
-    pub fn insert_at_line(&self, path: &str, line_number: usize, content: &str) -> Result<EditResult> {
+    pub fn insert_at_line(
+        &self,
+        path: &str,
+        line_number: usize,
+        content: &str,
+    ) -> Result<EditResult> {
         let file_path = Path::new(path);
-        
+
         if !file_path.exists() {
             return Ok(EditResult {
                 success: false,
@@ -189,15 +194,19 @@ impl EditFileSkill {
 
         let file_content = fs::read_to_string(file_path)?;
         let mut lines: Vec<&str> = file_content.lines().collect();
-        
+
         let insert_at = if line_number == 0 { 0 } else { line_number - 1 };
-        
+
         if insert_at > lines.len() {
             return Ok(EditResult {
                 success: false,
                 file_path: path.to_string(),
                 changes_made: 0,
-                message: format!("Line number {} exceeds file length {}", line_number, lines.len()),
+                message: format!(
+                    "Line number {} exceeds file length {}",
+                    line_number,
+                    lines.len()
+                ),
             });
         }
 
@@ -213,9 +222,14 @@ impl EditFileSkill {
         })
     }
 
-    pub fn delete_lines(&self, path: &str, start_line: usize, end_line: usize) -> Result<EditResult> {
+    pub fn delete_lines(
+        &self,
+        path: &str,
+        start_line: usize,
+        end_line: usize,
+    ) -> Result<EditResult> {
         let file_path = Path::new(path);
-        
+
         if !file_path.exists() {
             return Ok(EditResult {
                 success: false,
@@ -227,10 +241,10 @@ impl EditFileSkill {
 
         let file_content = fs::read_to_string(file_path)?;
         let lines: Vec<&str> = file_content.lines().collect();
-        
+
         let start = start_line.saturating_sub(1);
         let end = end_line.min(lines.len());
-        
+
         if start >= lines.len() {
             return Ok(EditResult {
                 success: false,
@@ -241,12 +255,13 @@ impl EditFileSkill {
         }
 
         let deleted = end - start;
-        let new_lines: Vec<&str> = lines.iter()
+        let new_lines: Vec<&str> = lines
+            .iter()
             .enumerate()
             .filter(|(i, _)| *i < start || *i >= end)
             .map(|(_, line)| *line)
             .collect();
-        
+
         let new_content = new_lines.join("\n");
         fs::write(file_path, &new_content)?;
 
@@ -328,15 +343,13 @@ mod tests {
         fs::write(&file_path, "hello world").unwrap();
 
         let skill = EditFileSkill::new();
-        let result = skill.edit_file(
-            file_path.to_str().unwrap(),
-            "world",
-            "Webrana"
-        ).unwrap();
+        let result = skill
+            .edit_file(file_path.to_str().unwrap(), "world", "Webrana")
+            .unwrap();
 
         assert!(result.success);
         assert_eq!(result.changes_made, 1);
-        
+
         let content = fs::read_to_string(&file_path).unwrap();
         assert_eq!(content, "hello Webrana");
     }

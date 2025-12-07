@@ -81,18 +81,29 @@ impl Console {
 
         println!("\n{}", "AVAILABLE SKILLS".bold().underline());
         println!("{}", "─".repeat(50));
-        
+
         // Group skills by category
-        let file_skills: Vec<_> = skills.iter().filter(|s| 
-            s.name.contains("file") || s.name.contains("search") || s.name.contains("list")
-        ).collect();
-        
-        let git_skills: Vec<_> = skills.iter().filter(|s| s.name.starts_with("git_")).collect();
-        
-        let other_skills: Vec<_> = skills.iter().filter(|s| 
-            !s.name.contains("file") && !s.name.contains("search") && 
-            !s.name.contains("list") && !s.name.starts_with("git_")
-        ).collect();
+        let file_skills: Vec<_> = skills
+            .iter()
+            .filter(|s| {
+                s.name.contains("file") || s.name.contains("search") || s.name.contains("list")
+            })
+            .collect();
+
+        let git_skills: Vec<_> = skills
+            .iter()
+            .filter(|s| s.name.starts_with("git_"))
+            .collect();
+
+        let other_skills: Vec<_> = skills
+            .iter()
+            .filter(|s| {
+                !s.name.contains("file")
+                    && !s.name.contains("search")
+                    && !s.name.contains("list")
+                    && !s.name.starts_with("git_")
+            })
+            .collect();
 
         if !file_skills.is_empty() {
             println!("\n  {}", "File Operations:".yellow());
@@ -134,7 +145,7 @@ impl Console {
     pub fn show_config(&self, settings: &Settings) {
         println!("\n{}", "CONFIGURATION".bold().underline());
         println!("{}", "─".repeat(50));
-        
+
         println!("\n  {}", "Models:".yellow());
         for (key, model) in &settings.models {
             let is_default = key == &settings.default_model;
@@ -148,17 +159,41 @@ impl Console {
             );
         }
 
-        println!("\n  {} {}", "Default Model:".yellow(), settings.default_model.green());
-        println!("  {} {}", "Default Agent:".yellow(), settings.default_agent.green());
+        println!(
+            "\n  {} {}",
+            "Default Model:".yellow(),
+            settings.default_model.green()
+        );
+        println!(
+            "  {} {}",
+            "Default Agent:".yellow(),
+            settings.default_agent.green()
+        );
 
         println!("\n  {}", "Safety Settings:".yellow());
-        println!("    Confirm file writes: {}", 
-            if settings.safety.confirm_file_write { "yes".green() } else { "no".red() });
-        println!("    Confirm shell commands: {}", 
-            if settings.safety.confirm_shell_execute { "yes".green() } else { "no".red() });
+        println!(
+            "    Confirm file writes: {}",
+            if settings.safety.confirm_file_write {
+                "yes".green()
+            } else {
+                "no".red()
+            }
+        );
+        println!(
+            "    Confirm shell commands: {}",
+            if settings.safety.confirm_shell_execute {
+                "yes".green()
+            } else {
+                "no".red()
+            }
+        );
 
         if let Ok(path) = Settings::config_path() {
-            println!("\n  {} {}", "Config file:".yellow(), path.display().to_string().dimmed());
+            println!(
+                "\n  {} {}",
+                "Config file:".yellow(),
+                path.display().to_string().dimmed()
+            );
         }
         println!();
     }
@@ -166,7 +201,7 @@ impl Console {
     pub fn confirm(&self, message: &str) -> bool {
         print!("{} {} [y/N]: ", "[CONFIRM]".yellow().bold(), message);
         std::io::Write::flush(&mut std::io::stdout()).ok();
-        
+
         let mut input = String::new();
         if std::io::stdin().read_line(&mut input).is_ok() {
             let input = input.trim().to_lowercase();

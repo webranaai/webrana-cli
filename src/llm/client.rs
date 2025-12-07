@@ -2,12 +2,12 @@ use anyhow::{Context, Result};
 use colored::Colorize;
 use std::sync::Arc;
 
+use super::providers::{
+    AnthropicProvider, ChatResponse, Message, OllamaProvider, OpenAIProvider, Provider, ToolCall,
+    ToolDefinition,
+};
 use crate::config::Settings;
 use crate::skills::SkillRegistry;
-use super::providers::{
-    Provider, Message, ChatResponse, ToolDefinition, ToolCall,
-    AnthropicProvider, OpenAIProvider, OllamaProvider
-};
 
 pub struct LlmClient {
     provider: Arc<dyn Provider>,
@@ -16,29 +16,42 @@ pub struct LlmClient {
 
 impl LlmClient {
     pub fn new(settings: &Settings) -> Result<Self> {
-        let model_config = settings.get_model(&settings.default_model)
+        let model_config = settings
+            .get_model(&settings.default_model)
             .context("Default model not found in configuration")?;
 
         let api_key = settings.get_api_key(model_config);
 
         let provider: Arc<dyn Provider> = match model_config.provider.as_str() {
             "anthropic" => {
-                let key = api_key.context("Anthropic API key not found. Set ANTHROPIC_API_KEY env var.")?;
-                Arc::new(AnthropicProvider::new(key, model_config.model.clone(), model_config.max_tokens))
+                let key = api_key
+                    .context("Anthropic API key not found. Set ANTHROPIC_API_KEY env var.")?;
+                Arc::new(AnthropicProvider::new(
+                    key,
+                    model_config.model.clone(),
+                    model_config.max_tokens,
+                ))
             }
             "openai" | "openai_compatible" => {
-                let key = api_key.context("OpenAI API key not found. Set OPENAI_API_KEY env var.")?;
-                Arc::new(OpenAIProvider::new(key, model_config.model.clone(), model_config.base_url.clone()))
+                let key =
+                    api_key.context("OpenAI API key not found. Set OPENAI_API_KEY env var.")?;
+                Arc::new(OpenAIProvider::new(
+                    key,
+                    model_config.model.clone(),
+                    model_config.base_url.clone(),
+                ))
             }
             "ollama" => {
-                let base_url = model_config.base_url.clone()
+                let base_url = model_config
+                    .base_url
+                    .clone()
                     .unwrap_or_else(|| "http://localhost:11434".to_string());
                 Arc::new(OllamaProvider::new(base_url, model_config.model.clone()))
             }
             _ => anyhow::bail!("Unknown provider: {}", model_config.provider),
         };
 
-        Ok(Self { 
+        Ok(Self {
             provider,
             settings: settings.clone(),
         })
@@ -84,13 +97,15 @@ impl LlmClient {
         messages.push(Message::user(user_message));
 
         // Convert skills to tool definitions
-        let tools: Vec<ToolDefinition> = skill_registry.list().iter().map(|skill| {
-            ToolDefinition {
+        let tools: Vec<ToolDefinition> = skill_registry
+            .list()
+            .iter()
+            .map(|skill| ToolDefinition {
                 name: skill.name.clone(),
                 description: skill.description.clone(),
                 input_schema: skill.parameters.clone(),
-            }
-        }).collect();
+            })
+            .collect();
 
         let response = self.provider.chat_stream(messages, Some(tools)).await?;
         Ok(response)
@@ -109,13 +124,15 @@ impl LlmClient {
         messages.extend(history.iter().cloned());
 
         // Convert skills to tool definitions
-        let tools: Vec<ToolDefinition> = skill_registry.list().iter().map(|skill| {
-            ToolDefinition {
+        let tools: Vec<ToolDefinition> = skill_registry
+            .list()
+            .iter()
+            .map(|skill| ToolDefinition {
                 name: skill.name.clone(),
                 description: skill.description.clone(),
                 input_schema: skill.parameters.clone(),
-            }
-        }).collect();
+            })
+            .collect();
 
         let max_iterations = 10;
         let mut iteration = 0;
@@ -128,7 +145,10 @@ impl LlmClient {
                 break;
             }
 
-            let response = self.provider.chat_stream(messages.clone(), Some(tools.clone())).await?;
+            let response = self
+                .provider
+                .chat_stream(messages.clone(), Some(tools.clone()))
+                .await?;
             final_content = response.content.clone();
 
             // If no tool calls, we're done
@@ -141,16 +161,15 @@ impl LlmClient {
 
             // Execute each tool call
             for tool_call in &response.tool_calls {
-                println!("\n{} Executing tool: {}", 
+                println!(
+                    "\n{} Executing tool: {}",
                     "[TOOL]".magenta(),
                     tool_call.name.as_str().cyan()
                 );
 
-                let result = skill_registry.execute(
-                    &tool_call.name,
-                    &tool_call.arguments,
-                    &self.settings,
-                ).await;
+                let result = skill_registry
+                    .execute(&tool_call.name, &tool_call.arguments, &self.settings)
+                    .await;
 
                 let result_str = match result {
                     Ok(output) => {
@@ -168,8 +187,7 @@ impl LlmClient {
                 // For Anthropic, we need to format this as a user message with tool_result
                 let tool_result_msg = format!(
                     "<tool_result tool_use_id=\"{}\">\n{}\n</tool_result>",
-                    tool_call.id,
-                    result_str
+                    tool_call.id, result_str
                 );
                 history.push(Message::user(&tool_result_msg));
             }
@@ -183,12 +201,14 @@ impl LlmClient {
     }
 
     pub fn get_tool_definitions(&self, skill_registry: &SkillRegistry) -> Vec<ToolDefinition> {
-        skill_registry.list().iter().map(|skill| {
-            ToolDefinition {
+        skill_registry
+            .list()
+            .iter()
+            .map(|skill| ToolDefinition {
                 name: skill.name.clone(),
                 description: skill.description.clone(),
                 input_schema: skill.parameters.clone(),
-            }
-        }).collect()
+            })
+            .collect()
     }
 }

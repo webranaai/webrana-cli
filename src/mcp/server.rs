@@ -3,9 +3,9 @@ use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
 
+use super::protocol::*;
 use crate::config::Settings;
 use crate::skills::SkillRegistry;
-use super::protocol::*;
 
 pub async fn start(port: u16) -> Result<()> {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).await?;
@@ -51,32 +51,28 @@ async fn handle_request(
     tools: &[Value],
 ) -> McpResponse {
     match request.method.as_str() {
-        "initialize" => {
-            McpResponse::success(
-                request.id.clone(),
-                json!({
-                    "protocolVersion": "2024-11-05",
-                    "capabilities": {
-                        "tools": {},
-                        "resources": {},
-                        "prompts": {}
-                    },
-                    "serverInfo": {
-                        "name": "webrana",
-                        "version": "0.1.0"
-                    }
-                }),
-            )
-        }
+        "initialize" => McpResponse::success(
+            request.id.clone(),
+            json!({
+                "protocolVersion": "2024-11-05",
+                "capabilities": {
+                    "tools": {},
+                    "resources": {},
+                    "prompts": {}
+                },
+                "serverInfo": {
+                    "name": "webrana",
+                    "version": "0.1.0"
+                }
+            }),
+        ),
 
-        "tools/list" => {
-            McpResponse::success(
-                request.id.clone(),
-                json!({
-                    "tools": tools
-                }),
-            )
-        }
+        "tools/list" => McpResponse::success(
+            request.id.clone(),
+            json!({
+                "tools": tools
+            }),
+        ),
 
         "tools/call" => {
             if let Some(params) = &request.params {
@@ -86,7 +82,7 @@ async fn handle_request(
                 // Execute the tool
                 let skills = SkillRegistry::new();
                 let settings = Settings::load().unwrap_or_default();
-                
+
                 match skills.execute(tool_name, &tool_args, &settings).await {
                     Ok(result) => McpResponse::success(
                         request.id.clone(),
@@ -97,34 +93,28 @@ async fn handle_request(
                             }]
                         }),
                     ),
-                    Err(e) => McpResponse::error(
-                        request.id.clone(),
-                        INTERNAL_ERROR,
-                        &e.to_string(),
-                    ),
+                    Err(e) => {
+                        McpResponse::error(request.id.clone(), INTERNAL_ERROR, &e.to_string())
+                    }
                 }
             } else {
                 McpResponse::error(request.id.clone(), INVALID_PARAMS, "Missing parameters")
             }
         }
 
-        "resources/list" => {
-            McpResponse::success(
-                request.id.clone(),
-                json!({
-                    "resources": []
-                }),
-            )
-        }
+        "resources/list" => McpResponse::success(
+            request.id.clone(),
+            json!({
+                "resources": []
+            }),
+        ),
 
-        "prompts/list" => {
-            McpResponse::success(
-                request.id.clone(),
-                json!({
-                    "prompts": []
-                }),
-            )
-        }
+        "prompts/list" => McpResponse::success(
+            request.id.clone(),
+            json!({
+                "prompts": []
+            }),
+        ),
 
         _ => McpResponse::error(
             request.id.clone(),

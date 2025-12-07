@@ -4,13 +4,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
-use crate::config::Settings;
 use super::file_ops::*;
-use super::shell::*;
 use super::git_ops::{
-    GitStatusSkill, GitDiffSkill, GitLogSkill, 
-    GitCommitSkill, GitAddSkill, GitBranchSkill, GitCheckoutSkill
+    GitAddSkill, GitBranchSkill, GitCheckoutSkill, GitCommitSkill, GitDiffSkill, GitLogSkill,
+    GitStatusSkill,
 };
+use super::shell::*;
+use crate::config::Settings;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SkillDefinition {
     pub name: String,
@@ -38,9 +38,12 @@ impl SkillRegistry {
         skills.insert("write_file".to_string(), Box::new(WriteFileSkill::new()));
         skills.insert("list_files".to_string(), Box::new(ListFilesSkill));
         skills.insert("search_files".to_string(), Box::new(SearchFilesSkill));
-        
+
         // Shell (with SENTINEL security integration)
-        skills.insert("execute_command".to_string(), Box::new(ExecuteCommandSkill::new()));
+        skills.insert(
+            "execute_command".to_string(),
+            Box::new(ExecuteCommandSkill::new()),
+        );
 
         // Git operations
         skills.insert("git_status".to_string(), Box::new(GitStatusSkill));
@@ -53,11 +56,14 @@ impl SkillRegistry {
 
         // Edit operations
         skills.insert("edit_file".to_string(), Box::new(EditFileSkillWrapper));
-        
+
         // Codebase operations
         skills.insert("grep_codebase".to_string(), Box::new(GrepCodebaseSkill));
         skills.insert("list_symbols".to_string(), Box::new(ListSymbolsSkill));
-        skills.insert("get_project_info".to_string(), Box::new(GetProjectInfoSkill));
+        skills.insert(
+            "get_project_info".to_string(),
+            Box::new(GetProjectInfoSkill),
+        );
 
         Self { skills }
     }
@@ -76,21 +82,26 @@ impl SkillRegistry {
     }
 
     pub async fn execute(&self, name: &str, args: &Value, settings: &Settings) -> Result<String> {
-        let skill = self.skills.get(name)
+        let skill = self
+            .skills
+            .get(name)
             .ok_or_else(|| anyhow::anyhow!("Skill not found: {}", name))?;
-        
+
         skill.execute(args, settings).await
     }
 
     pub fn to_tool_definitions(&self) -> Vec<Value> {
-        self.skills.values().map(|skill| {
-            let def = skill.definition();
-            serde_json::json!({
-                "name": def.name,
-                "description": def.description,
-                "input_schema": def.parameters
+        self.skills
+            .values()
+            .map(|skill| {
+                let def = skill.definition();
+                serde_json::json!({
+                    "name": def.name,
+                    "description": def.description,
+                    "input_schema": def.parameters
+                })
             })
-        }).collect()
+            .collect()
     }
 }
 
@@ -108,7 +119,9 @@ impl Skill for EditFileSkillWrapper {
     fn definition(&self) -> SkillDefinition {
         SkillDefinition {
             name: "edit_file".to_string(),
-            description: "Edit a file by searching and replacing text. Use search/replace for precise edits.".to_string(),
+            description:
+                "Edit a file by searching and replacing text. Use search/replace for precise edits."
+                    .to_string(),
             parameters: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -132,16 +145,22 @@ impl Skill for EditFileSkillWrapper {
     }
 
     async fn execute(&self, args: &Value, _settings: &Settings) -> Result<String> {
-        let path = args.get("path").and_then(|v| v.as_str())
+        let path = args
+            .get("path")
+            .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow::anyhow!("Missing path"))?;
-        let search = args.get("search").and_then(|v| v.as_str())
+        let search = args
+            .get("search")
+            .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow::anyhow!("Missing search"))?;
-        let replace = args.get("replace").and_then(|v| v.as_str())
+        let replace = args
+            .get("replace")
+            .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow::anyhow!("Missing replace"))?;
 
         let skill = super::edit_file::EditFileSkill::new();
         let result = skill.edit_file(path, search, replace)?;
-        
+
         Ok(serde_json::to_string_pretty(&result)?)
     }
 }
@@ -174,21 +193,25 @@ impl Skill for GrepCodebaseSkill {
     }
 
     async fn execute(&self, args: &Value, _settings: &Settings) -> Result<String> {
-        let pattern = args.get("pattern").and_then(|v| v.as_str())
+        let pattern = args
+            .get("pattern")
+            .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow::anyhow!("Missing pattern"))?;
         let path = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
 
         let skill = super::codebase::CodebaseSkill::new(path);
         let results = skill.grep(pattern)?;
-        
+
         if results.is_empty() {
             return Ok("No matches found".to_string());
         }
 
-        let output: Vec<String> = results.iter().take(50).map(|r| {
-            format!("{}:{}: {}", r.file, r.line_number, r.content.trim())
-        }).collect();
-        
+        let output: Vec<String> = results
+            .iter()
+            .take(50)
+            .map(|r| format!("{}:{}: {}", r.file, r.line_number, r.content.trim()))
+            .collect();
+
         Ok(output.join("\n"))
     }
 }
@@ -217,21 +240,24 @@ impl Skill for ListSymbolsSkill {
     }
 
     async fn execute(&self, args: &Value, _settings: &Settings) -> Result<String> {
-        let path = args.get("path").and_then(|v| v.as_str())
+        let path = args
+            .get("path")
+            .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow::anyhow!("Missing path"))?;
 
         let current_dir = std::env::current_dir()?;
         let skill = super::codebase::CodebaseSkill::new(&current_dir);
         let symbols = skill.list_symbols(path)?;
-        
+
         if symbols.is_empty() {
             return Ok("No symbols found".to_string());
         }
 
-        let output: Vec<String> = symbols.iter().map(|s| {
-            format!("{}:{} {} {}", path, s.line, s.kind.as_str(), s.name)
-        }).collect();
-        
+        let output: Vec<String> = symbols
+            .iter()
+            .map(|s| format!("{}:{} {} {}", path, s.line, s.kind.as_str(), s.name))
+            .collect();
+
         Ok(output.join("\n"))
     }
 }
@@ -244,7 +270,8 @@ impl Skill for GetProjectInfoSkill {
     fn definition(&self) -> SkillDefinition {
         SkillDefinition {
             name: "get_project_info".to_string(),
-            description: "Get information about the current project (type, dependencies, etc.)".to_string(),
+            description: "Get information about the current project (type, dependencies, etc.)"
+                .to_string(),
             parameters: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -263,7 +290,7 @@ impl Skill for GetProjectInfoSkill {
 
         let mut skill = super::codebase::CodebaseSkill::new(path);
         let info = skill.detect_project()?;
-        
+
         Ok(info.to_string())
     }
 }

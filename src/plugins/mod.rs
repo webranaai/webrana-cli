@@ -3,13 +3,13 @@
 // Created by: CIPHER (Team Beta)
 // ============================================
 
-mod runtime;
-mod manifest;
 mod loader;
+mod manifest;
+mod runtime;
 
-pub use runtime::{PluginRuntime, PluginInstance};
-pub use manifest::{PluginManifest, PluginConfig};
 pub use loader::PluginLoader;
+pub use manifest::{PluginConfig, PluginManifest};
+pub use runtime::{PluginInstance, PluginRuntime};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -18,13 +18,13 @@ use serde::{Deserialize, Serialize};
 pub trait Plugin: Send + Sync {
     /// Get plugin metadata
     fn manifest(&self) -> &PluginManifest;
-    
+
     /// Initialize the plugin
     fn init(&mut self) -> Result<()>;
-    
+
     /// Execute the plugin with given input
     fn execute(&self, input: &PluginInput) -> Result<PluginOutput>;
-    
+
     /// Cleanup when plugin is unloaded
     fn cleanup(&mut self) -> Result<()>;
 }

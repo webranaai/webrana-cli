@@ -40,13 +40,20 @@ async fn main() -> Result<()> {
             let orchestrator = Orchestrator::new(settings, auto || cli.auto).await?;
             orchestrator.chat(&message).await?;
         }
-        Some(Commands::Run { task, max_iterations, yolo }) => {
-            console.info(&format!("🤖 Auto Mode: max {} iterations{}", 
+        Some(Commands::Run {
+            task,
+            max_iterations,
+            yolo,
+        }) => {
+            console.info(&format!(
+                "🤖 Auto Mode: max {} iterations{}",
                 max_iterations,
                 if yolo { " (YOLO mode)" } else { "" }
             ));
             let orchestrator = Orchestrator::new(settings, true).await?;
-            orchestrator.run_autonomous(&task, max_iterations, yolo).await?;
+            orchestrator
+                .run_autonomous(&task, max_iterations, yolo)
+                .await?;
         }
         Some(Commands::Agents) => {
             console.list_agents(&settings);
@@ -57,14 +64,12 @@ async fn main() -> Result<()> {
         Some(Commands::Config) => {
             console.show_config(&settings);
         }
-        Some(Commands::Mcp { command }) => {
-            match command {
-                cli::McpCommands::Serve { port } => {
-                    console.info(&format!("Starting MCP server on port {}...", port));
-                    mcp::server::start(port).await?;
-                }
+        Some(Commands::Mcp { command }) => match command {
+            cli::McpCommands::Serve { port } => {
+                console.info(&format!("Starting MCP server on port {}...", port));
+                mcp::server::start(port).await?;
             }
-        }
+        },
         Some(Commands::Tui) => {
             tui::run_tui().await?;
         }

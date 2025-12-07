@@ -1,9 +1,9 @@
-use std::path::Path;
-use std::fs;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
 
-use crate::indexer::{FileWalker, FileIndex, ProjectDetector, ProjectInfo, FileType};
+use crate::indexer::{FileIndex, FileType, FileWalker, ProjectDetector, ProjectInfo};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CodebaseContext {
@@ -51,7 +51,8 @@ impl CodebaseSkill {
         let project_info = self.detect_project()?.clone();
         let index = self.index()?;
 
-        let code_files: Vec<String> = index.get_code_files()
+        let code_files: Vec<String> = index
+            .get_code_files()
             .iter()
             .take(max_files)
             .map(|f| f.path.clone())
@@ -83,7 +84,13 @@ impl CodebaseSkill {
         Ok(results)
     }
 
-    fn grep_recursive(&self, dir: &Path, pattern: &str, results: &mut Vec<GrepResult>, depth: usize) -> Result<()> {
+    fn grep_recursive(
+        &self,
+        dir: &Path,
+        pattern: &str,
+        results: &mut Vec<GrepResult>,
+        depth: usize,
+    ) -> Result<()> {
         if depth > 10 || results.len() > 100 {
             return Ok(());
         }
@@ -102,7 +109,8 @@ impl CodebaseSkill {
                 self.grep_recursive(&path, pattern, results, depth + 1)?;
             } else if path.is_file() {
                 if let Ok(content) = fs::read_to_string(&path) {
-                    let relative_path = path.strip_prefix(&self.root)
+                    let relative_path = path
+                        .strip_prefix(&self.root)
                         .unwrap_or(&path)
                         .to_string_lossy()
                         .to_string();
@@ -129,7 +137,8 @@ impl CodebaseSkill {
     pub fn list_symbols(&self, path: &str) -> Result<Vec<Symbol>> {
         let full_path = self.root.join(path);
         let content = fs::read_to_string(&full_path)?;
-        let extension = Path::new(path).extension()
+        let extension = Path::new(path)
+            .extension()
             .and_then(|e| e.to_str())
             .unwrap_or("");
 
@@ -149,7 +158,7 @@ impl CodebaseSkill {
     fn extract_rust_symbols(&self, content: &str, symbols: &mut Vec<Symbol>) {
         for (line_num, line) in content.lines().enumerate() {
             let trimmed = line.trim();
-            
+
             if trimmed.starts_with("fn ") || trimmed.starts_with("pub fn ") {
                 if let Some(name) = self.extract_fn_name(trimmed, "fn ") {
                     symbols.push(Symbol {
@@ -197,7 +206,7 @@ impl CodebaseSkill {
     fn extract_python_symbols(&self, content: &str, symbols: &mut Vec<Symbol>) {
         for (line_num, line) in content.lines().enumerate() {
             let trimmed = line.trim();
-            
+
             if trimmed.starts_with("def ") {
                 if let Some(name) = self.extract_fn_name(trimmed, "def ") {
                     symbols.push(Symbol {
@@ -229,7 +238,7 @@ impl CodebaseSkill {
     fn extract_js_symbols(&self, content: &str, symbols: &mut Vec<Symbol>) {
         for (line_num, line) in content.lines().enumerate() {
             let trimmed = line.trim();
-            
+
             if trimmed.starts_with("function ") {
                 if let Some(name) = self.extract_fn_name(trimmed, "function ") {
                     symbols.push(Symbol {
@@ -246,8 +255,10 @@ impl CodebaseSkill {
                         line: line_num + 1,
                     });
                 }
-            } else if trimmed.contains("const ") && trimmed.contains(" = ") && 
-                      (trimmed.contains("=>") || trimmed.contains("function")) {
+            } else if trimmed.contains("const ")
+                && trimmed.contains(" = ")
+                && (trimmed.contains("=>") || trimmed.contains("function"))
+            {
                 if let Some(name) = self.extract_const_fn(trimmed) {
                     symbols.push(Symbol {
                         name,
@@ -272,7 +283,7 @@ impl CodebaseSkill {
     fn extract_go_symbols(&self, content: &str, symbols: &mut Vec<Symbol>) {
         for (line_num, line) in content.lines().enumerate() {
             let trimmed = line.trim();
-            
+
             if trimmed.starts_with("func ") {
                 if let Some(name) = self.extract_go_func_name(trimmed) {
                     symbols.push(Symbol {
@@ -304,19 +315,37 @@ impl CodebaseSkill {
     fn extract_fn_name(&self, line: &str, keyword: &str) -> Option<String> {
         let after_keyword = line.split(keyword).nth(1)?;
         let name = after_keyword.split('(').next()?.trim();
-        if name.is_empty() { None } else { Some(name.to_string()) }
+        if name.is_empty() {
+            None
+        } else {
+            Some(name.to_string())
+        }
     }
 
     fn extract_after_keyword(&self, line: &str, keyword: &str) -> Option<String> {
         let after_keyword = line.split(keyword).nth(1)?;
-        let name = after_keyword.split(|c: char| !c.is_alphanumeric() && c != '_').next()?.trim();
-        if name.is_empty() { None } else { Some(name.to_string()) }
+        let name = after_keyword
+            .split(|c: char| !c.is_alphanumeric() && c != '_')
+            .next()?
+            .trim();
+        if name.is_empty() {
+            None
+        } else {
+            Some(name.to_string())
+        }
     }
 
     fn extract_class_name(&self, line: &str) -> Option<String> {
         let after_class = line.split("class ").nth(1)?;
-        let name = after_class.split(|c: char| !c.is_alphanumeric() && c != '_').next()?.trim();
-        if name.is_empty() { None } else { Some(name.to_string()) }
+        let name = after_class
+            .split(|c: char| !c.is_alphanumeric() && c != '_')
+            .next()?
+            .trim();
+        if name.is_empty() {
+            None
+        } else {
+            Some(name.to_string())
+        }
     }
 
     fn extract_impl_name(&self, line: &str) -> Option<String> {
@@ -328,14 +357,28 @@ impl CodebaseSkill {
                 return Some(format!("{} for {}", parts[0].trim(), parts[1].trim()));
             }
         }
-        let name = cleaned.split(|c: char| c == '<' || c == '{' || c.is_whitespace()).next()?.trim();
-        if name.is_empty() { None } else { Some(name.to_string()) }
+        let name = cleaned
+            .split(|c: char| c == '<' || c == '{' || c.is_whitespace())
+            .next()?
+            .trim();
+        if name.is_empty() {
+            None
+        } else {
+            Some(name.to_string())
+        }
     }
 
     fn extract_const_fn(&self, line: &str) -> Option<String> {
         let after_const = line.split("const ").nth(1)?;
-        let name = after_const.split(|c: char| !c.is_alphanumeric() && c != '_').next()?.trim();
-        if name.is_empty() { None } else { Some(name.to_string()) }
+        let name = after_const
+            .split(|c: char| !c.is_alphanumeric() && c != '_')
+            .next()?
+            .trim();
+        if name.is_empty() {
+            None
+        } else {
+            Some(name.to_string())
+        }
     }
 
     fn extract_go_func_name(&self, line: &str) -> Option<String> {
@@ -343,10 +386,18 @@ impl CodebaseSkill {
         if after_func.starts_with('(') {
             let after_receiver = after_func.split(')').nth(1)?;
             let name = after_receiver.trim().split('(').next()?.trim();
-            if name.is_empty() { None } else { Some(name.to_string()) }
+            if name.is_empty() {
+                None
+            } else {
+                Some(name.to_string())
+            }
         } else {
             let name = after_func.split('(').next()?.trim();
-            if name.is_empty() { None } else { Some(name.to_string()) }
+            if name.is_empty() {
+                None
+            } else {
+                Some(name.to_string())
+            }
         }
     }
 }

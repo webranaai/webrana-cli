@@ -9,9 +9,9 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
 
+use super::registry::{Skill, SkillDefinition};
 use crate::config::Settings;
 use crate::core::{InputSanitizer, SecurityConfig};
-use super::registry::{Skill, SkillDefinition};
 
 pub struct ReadFileSkill {
     sanitizer: InputSanitizer,
@@ -58,16 +58,14 @@ impl Skill for ReadFileSkill {
     }
 
     async fn execute(&self, args: &Value, _settings: &Settings) -> Result<String> {
-        let path = args["path"].as_str()
-            .context("Missing 'path' argument")?;
+        let path = args["path"].as_str().context("Missing 'path' argument")?;
 
         // SENTINEL Security: Validate path against sensitive files
         if self.sanitizer.is_sensitive_file(path) {
             anyhow::bail!("🛡️ SECURITY: Access denied to sensitive file: {}", path);
         }
 
-        let content = fs::read_to_string(path)
-            .context(format!("Failed to read file: {}", path))?;
+        let content = fs::read_to_string(path).context(format!("Failed to read file: {}", path))?;
 
         // SENTINEL Security: Sanitize output to remove any secrets
         let sanitized = self.sanitizer.sanitize_output(&content);
@@ -125,9 +123,9 @@ impl Skill for WriteFileSkill {
     }
 
     async fn execute(&self, args: &Value, settings: &Settings) -> Result<String> {
-        let path = args["path"].as_str()
-            .context("Missing 'path' argument")?;
-        let content = args["content"].as_str()
+        let path = args["path"].as_str().context("Missing 'path' argument")?;
+        let content = args["content"]
+            .as_str()
             .context("Missing 'content' argument")?;
 
         // SENTINEL Security Layer 1: Check if path is blocked by settings
@@ -154,7 +152,11 @@ impl Skill for WriteFileSkill {
                     .context(format!("Failed to write file: {}", path))?;
 
                 tracing::info!("📝 File written: {} ({} bytes)", path, content.len());
-                Ok(format!("✅ Successfully wrote {} bytes to {}", content.len(), path))
+                Ok(format!(
+                    "✅ Successfully wrote {} bytes to {}",
+                    content.len(),
+                    path
+                ))
             }
             Err(e) => {
                 anyhow::bail!("🛡️ SECURITY: Path validation failed - {}", e);
@@ -190,8 +192,7 @@ impl Skill for ListFilesSkill {
     }
 
     async fn execute(&self, args: &Value, _settings: &Settings) -> Result<String> {
-        let path = args["path"].as_str()
-            .context("Missing 'path' argument")?;
+        let path = args["path"].as_str().context("Missing 'path' argument")?;
         let recursive = args["recursive"].as_bool().unwrap_or(false);
 
         let mut files = Vec::new();
@@ -206,7 +207,7 @@ fn collect_files(path: &Path, recursive: bool, files: &mut Vec<String>) -> Resul
         for entry in fs::read_dir(path)? {
             let entry = entry?;
             let entry_path = entry.path();
-            
+
             if entry_path.is_dir() {
                 files.push(format!("{}/", entry_path.display()));
                 if recursive {
@@ -247,9 +248,9 @@ impl Skill for SearchFilesSkill {
     }
 
     async fn execute(&self, args: &Value, _settings: &Settings) -> Result<String> {
-        let path = args["path"].as_str()
-            .context("Missing 'path' argument")?;
-        let pattern = args["pattern"].as_str()
+        let path = args["path"].as_str().context("Missing 'path' argument")?;
+        let pattern = args["pattern"]
+            .as_str()
             .context("Missing 'pattern' argument")?;
 
         let mut results = Vec::new();
@@ -268,7 +269,7 @@ fn search_in_dir(path: &Path, pattern: &str, results: &mut Vec<String>) -> Resul
         for entry in fs::read_dir(path)? {
             let entry = entry?;
             let entry_path = entry.path();
-            
+
             if entry_path.is_dir() {
                 search_in_dir(&entry_path, pattern, results)?;
             } else if entry_path.is_file() {

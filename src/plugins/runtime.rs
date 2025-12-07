@@ -3,11 +3,11 @@
 // WASM Integration (requires wasmtime feature)
 // ============================================
 
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use std::path::PathBuf;
 
 use super::manifest::{PluginManifest, PluginType};
-use super::{PluginInput, PluginOutput, PluginContext};
+use super::{PluginContext, PluginInput, PluginOutput};
 
 /// Plugin instance managing the lifecycle of a loaded plugin
 pub struct PluginInstance {
@@ -57,7 +57,7 @@ impl PluginInstance {
             PluginType::Native => self.init_native()?,
             PluginType::Script => self.init_script()?,
         }
-        
+
         self.state = PluginState::Ready;
         Ok(())
     }
@@ -69,7 +69,10 @@ impl PluginInstance {
         }
 
         // Find the skill
-        let _skill = self.manifest.skills.iter()
+        let _skill = self
+            .manifest
+            .skills
+            .iter()
             .find(|s| s.name == input.action)
             .ok_or_else(|| anyhow!("Skill not found: {}", input.action))?;
 
@@ -93,10 +96,10 @@ impl PluginInstance {
     // ==========================================
     // WASM Plugin Implementation
     // ==========================================
-    
+
     fn init_wasm(&mut self) -> Result<()> {
         let wasm_path = self.plugin_dir.join(&self.manifest.entry_point);
-        
+
         if !wasm_path.exists() {
             return Err(anyhow!("WASM file not found: {:?}", wasm_path));
         }
@@ -107,14 +110,14 @@ impl PluginInstance {
              Rebuild with wasmtime feature for full WASM support.",
             self.manifest.id
         );
-        
+
         Ok(())
     }
 
     fn execute_wasm(&self, input: &PluginInput) -> Result<PluginOutput> {
         // WASM runtime disabled
         Ok(PluginOutput::error(
-            "WASM runtime is disabled. Rebuild with wasmtime feature for WASM plugin support."
+            "WASM runtime is disabled. Rebuild with wasmtime feature for WASM plugin support.",
         ))
     }
 
@@ -124,7 +127,7 @@ impl PluginInstance {
 
     fn init_native(&mut self) -> Result<()> {
         let lib_path = self.plugin_dir.join(&self.manifest.entry_point);
-        
+
         if !lib_path.exists() {
             return Err(anyhow!("Native library not found: {:?}", lib_path));
         }
@@ -143,7 +146,7 @@ impl PluginInstance {
 
     fn init_script(&mut self) -> Result<()> {
         let script_path = self.plugin_dir.join(&self.manifest.entry_point);
-        
+
         if !script_path.exists() {
             return Err(anyhow!("Script file not found: {:?}", script_path));
         }
@@ -199,8 +202,15 @@ impl PluginRuntime {
     }
 
     /// Execute a plugin skill
-    pub fn execute_skill(&self, plugin_id: &str, skill_name: &str, params: serde_json::Value) -> Result<PluginOutput> {
-        let instance = self.loader.get_instance(plugin_id)
+    pub fn execute_skill(
+        &self,
+        plugin_id: &str,
+        skill_name: &str,
+        params: serde_json::Value,
+    ) -> Result<PluginOutput> {
+        let instance = self
+            .loader
+            .get_instance(plugin_id)
             .ok_or_else(|| anyhow!("Plugin not loaded: {}", plugin_id))?;
 
         let input = PluginInput {

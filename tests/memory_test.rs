@@ -15,7 +15,7 @@ mod memory_tests {
             "messages": [],
             "max_messages": 50
         });
-        
+
         assert!(ctx_json["messages"].as_array().unwrap().is_empty());
         assert_eq!(ctx_json["max_messages"], 50);
     }
@@ -27,7 +27,7 @@ mod memory_tests {
             "messages": [],
             "max_messages": 100
         });
-        
+
         assert_eq!(ctx_json["max_messages"], 100);
     }
 
@@ -35,10 +35,10 @@ mod memory_tests {
     #[test]
     fn test_add_messages() {
         let mut messages: Vec<serde_json::Value> = Vec::new();
-        
+
         messages.push(json!({"role": "user", "content": "Hello"}));
         messages.push(json!({"role": "assistant", "content": "Hi there!"}));
-        
+
         assert_eq!(messages.len(), 2);
         assert_eq!(messages[0]["role"], "user");
         assert_eq!(messages[1]["role"], "assistant");
@@ -49,17 +49,17 @@ mod memory_tests {
     fn test_message_trimming() {
         let max_messages = 5;
         let mut messages: Vec<serde_json::Value> = Vec::new();
-        
+
         // Add more messages than the limit
         for i in 0..10 {
             messages.push(json!({"role": "user", "content": format!("Message {}", i)}));
         }
-        
+
         // Simulate trimming
         while messages.len() > max_messages {
             messages.remove(0);
         }
-        
+
         assert_eq!(messages.len(), max_messages);
         // First message should be Message 5 (oldest kept)
         assert_eq!(messages[0]["content"], "Message 5");
@@ -68,12 +68,10 @@ mod memory_tests {
     /// Test context clear
     #[test]
     fn test_context_clear() {
-        let mut messages: Vec<serde_json::Value> = vec![
-            json!({"role": "user", "content": "test"}),
-        ];
-        
+        let mut messages: Vec<serde_json::Value> = vec![json!({"role": "user", "content": "test"})];
+
         messages.clear();
-        
+
         assert!(messages.is_empty());
     }
 
@@ -85,7 +83,7 @@ mod memory_tests {
             json!({"role": "assistant", "content": "2"}),
             json!({"role": "user", "content": "3"}),
         ];
-        
+
         assert_eq!(messages.len(), 3);
         assert!(!messages.is_empty());
     }
@@ -93,12 +91,10 @@ mod memory_tests {
     /// Test context clone behavior
     #[test]
     fn test_context_clone() {
-        let messages: Vec<serde_json::Value> = vec![
-            json!({"role": "user", "content": "original"}),
-        ];
-        
+        let messages: Vec<serde_json::Value> = vec![json!({"role": "user", "content": "original"})];
+
         let cloned = messages.clone();
-        
+
         assert_eq!(messages.len(), cloned.len());
         assert_eq!(messages[0]["content"], cloned[0]["content"]);
     }
@@ -113,10 +109,10 @@ mod memory_tests {
             json!({"role": "user", "content": "And 3+3?"}),
             json!({"role": "assistant", "content": "3+3 equals 6."}),
         ];
-        
+
         // System message should be first
         assert_eq!(conversation[0]["role"], "system");
-        
+
         // Verify turn-taking after system
         for i in 1..conversation.len() {
             if i % 2 == 1 {
@@ -135,7 +131,7 @@ mod memory_tests {
             "role": "user",
             "content": special_content
         });
-        
+
         assert_eq!(msg["content"].as_str().unwrap(), special_content);
     }
 
@@ -147,7 +143,7 @@ mod memory_tests {
             "role": "assistant",
             "content": multiline
         });
-        
+
         let content = msg["content"].as_str().unwrap();
         assert!(content.contains('\n'));
         assert_eq!(content.lines().count(), 3);
@@ -160,7 +156,7 @@ mod memory_tests {
             "role": "user",
             "content": ""
         });
-        
+
         assert!(msg["content"].as_str().unwrap().is_empty());
     }
 
@@ -172,7 +168,7 @@ mod memory_tests {
             "role": "user",
             "content": unicode_content
         });
-        
+
         assert_eq!(msg["content"].as_str().unwrap(), unicode_content);
     }
 }

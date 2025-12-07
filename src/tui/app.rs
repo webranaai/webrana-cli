@@ -22,37 +22,37 @@ pub enum FocusedPanel {
 pub struct App {
     /// Current app state
     pub state: AppState,
-    
+
     /// Input buffer for user text
     pub input: String,
-    
+
     /// Cursor position in input
     pub cursor_position: usize,
-    
+
     /// Chat history
     pub messages: Vec<ChatMessage>,
-    
+
     /// Current output/response
     pub output: String,
-    
+
     /// File tree (simplified)
     pub files: Vec<String>,
-    
+
     /// Selected file index
     pub selected_file: usize,
-    
+
     /// Currently focused panel
     pub focused_panel: FocusedPanel,
-    
+
     /// Scroll offset for chat
     pub chat_scroll: u16,
-    
+
     /// Scroll offset for output
     pub output_scroll: u16,
-    
+
     /// Status message
     pub status: String,
-    
+
     /// Is the app running
     pub running: bool,
 }
@@ -77,13 +77,11 @@ impl App {
             state: AppState::Input,
             input: String::new(),
             cursor_position: 0,
-            messages: vec![
-                ChatMessage {
-                    role: MessageRole::System,
-                    content: "Welcome to Webrana AI! Type your message and press Enter.".to_string(),
-                    timestamp: chrono_lite(),
-                },
-            ],
+            messages: vec![ChatMessage {
+                role: MessageRole::System,
+                content: "Welcome to Webrana AI! Type your message and press Enter.".to_string(),
+                timestamp: chrono_lite(),
+            }],
             output: String::new(),
             files: vec![
                 "src/".to_string(),
@@ -138,40 +136,36 @@ impl App {
                     FocusedPanel::Output => FocusedPanel::Chat,
                 };
             }
-            KeyCode::Up | KeyCode::Char('k') => {
-                match self.focused_panel {
-                    FocusedPanel::Files => {
-                        if self.selected_file > 0 {
-                            self.selected_file -= 1;
-                        }
-                    }
-                    FocusedPanel::Chat => {
-                        if self.chat_scroll > 0 {
-                            self.chat_scroll -= 1;
-                        }
-                    }
-                    FocusedPanel::Output => {
-                        if self.output_scroll > 0 {
-                            self.output_scroll -= 1;
-                        }
+            KeyCode::Up | KeyCode::Char('k') => match self.focused_panel {
+                FocusedPanel::Files => {
+                    if self.selected_file > 0 {
+                        self.selected_file -= 1;
                     }
                 }
-            }
-            KeyCode::Down | KeyCode::Char('j') => {
-                match self.focused_panel {
-                    FocusedPanel::Files => {
-                        if self.selected_file < self.files.len().saturating_sub(1) {
-                            self.selected_file += 1;
-                        }
-                    }
-                    FocusedPanel::Chat => {
-                        self.chat_scroll += 1;
-                    }
-                    FocusedPanel::Output => {
-                        self.output_scroll += 1;
+                FocusedPanel::Chat => {
+                    if self.chat_scroll > 0 {
+                        self.chat_scroll -= 1;
                     }
                 }
-            }
+                FocusedPanel::Output => {
+                    if self.output_scroll > 0 {
+                        self.output_scroll -= 1;
+                    }
+                }
+            },
+            KeyCode::Down | KeyCode::Char('j') => match self.focused_panel {
+                FocusedPanel::Files => {
+                    if self.selected_file < self.files.len().saturating_sub(1) {
+                        self.selected_file += 1;
+                    }
+                }
+                FocusedPanel::Chat => {
+                    self.chat_scroll += 1;
+                }
+                FocusedPanel::Output => {
+                    self.output_scroll += 1;
+                }
+            },
             _ => {}
         }
         false
@@ -191,14 +185,14 @@ impl App {
                         content: self.input.clone(),
                         timestamp: chrono_lite(),
                     });
-                    
+
                     // Simulate response (in real app, this would call LLM)
                     self.messages.push(ChatMessage {
                         role: MessageRole::Assistant,
                         content: format!("Processing: {}", self.input),
                         timestamp: chrono_lite(),
                     });
-                    
+
                     self.input.clear();
                     self.cursor_position = 0;
                     self.status = "Message sent".to_string();

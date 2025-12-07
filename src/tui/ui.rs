@@ -2,10 +2,7 @@
 // TUI Rendering - FORGE (Team Alpha)
 // ============================================
 
-use ratatui::{
-    prelude::*,
-    widgets::*,
-};
+use ratatui::{prelude::*, widgets::*};
 
 use super::app::{App, AppState, FocusedPanel, MessageRole};
 
@@ -35,10 +32,10 @@ pub fn draw(f: &mut Frame, app: &App) {
 
     // Draw chat messages
     draw_chat_panel(f, app, chat_chunks[0]);
-    
+
     // Draw input
     draw_input_panel(f, app, chat_chunks[1]);
-    
+
     // Draw status bar
     draw_status_bar(f, app, chat_chunks[2]);
 
@@ -107,14 +104,13 @@ fn draw_chat_panel(f: &mut Frame, app: &App, area: Rect) {
         Style::default().fg(Color::DarkGray)
     };
 
-    let chat = List::new(messages)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(border_style)
-                .title(" Chat ")
-                .title_style(Style::default().fg(Color::Cyan).bold()),
-        );
+    let chat = List::new(messages).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(border_style)
+            .title(" Chat ")
+            .title_style(Style::default().fg(Color::Cyan).bold()),
+    );
 
     f.render_widget(chat, area);
 }
@@ -144,10 +140,7 @@ fn draw_input_panel(f: &mut Frame, app: &App, area: Rect) {
 
     // Show cursor in input mode
     if app.state == AppState::Input {
-        f.set_cursor(
-            area.x + app.cursor_position as u16 + 1,
-            area.y + 1,
-        );
+        f.set_cursor(area.x + app.cursor_position as u16 + 1, area.y + 1);
     }
 }
 
@@ -196,7 +189,7 @@ fn draw_output_panel(f: &mut Frame, app: &App, area: Rect) {
 
 fn draw_help_overlay(f: &mut Frame) {
     let area = centered_rect(60, 60, f.size());
-    
+
     f.render_widget(Clear, area);
 
     let help_text = vec![

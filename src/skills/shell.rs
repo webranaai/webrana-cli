@@ -8,9 +8,9 @@ use async_trait::async_trait;
 use serde_json::{json, Value};
 use std::process::Command;
 
-use crate::config::Settings;
-use crate::core::{InputSanitizer, CommandRisk, SecurityConfig};
 use super::registry::{Skill, SkillDefinition};
+use crate::config::Settings;
+use crate::core::{CommandRisk, InputSanitizer, SecurityConfig};
 
 pub struct ExecuteCommandSkill {
     sanitizer: InputSanitizer,
@@ -61,14 +61,19 @@ impl Skill for ExecuteCommandSkill {
     }
 
     async fn execute(&self, args: &Value, settings: &Settings) -> Result<String> {
-        let command = args["command"].as_str()
+        let command = args["command"]
+            .as_str()
             .context("Missing 'command' argument")?;
         let working_dir = args["working_dir"].as_str();
 
         // SENTINEL Security Layer 1: Validate command against allowed list
         if !settings.safety.allowed_commands.is_empty() {
             let cmd_name = command.split_whitespace().next().unwrap_or("");
-            if !settings.safety.allowed_commands.contains(&cmd_name.to_string()) {
+            if !settings
+                .safety
+                .allowed_commands
+                .contains(&cmd_name.to_string())
+            {
                 anyhow::bail!(
                     "🛡️ SECURITY: Command '{}' not in allowed list. Allowed: {:?}",
                     cmd_name,
@@ -79,7 +84,7 @@ impl Skill for ExecuteCommandSkill {
 
         // SENTINEL Security Layer 2: Comprehensive command risk assessment
         let risk = self.sanitizer.validate_command(command)?;
-        
+
         match &risk {
             CommandRisk::Blocked(reason) => {
                 anyhow::bail!("🛡️ BLOCKED: {}", reason);
@@ -112,8 +117,7 @@ impl Skill for ExecuteCommandSkill {
             cmd.current_dir(dir);
         }
 
-        let output = cmd.output()
-            .context("Failed to execute command")?;
+        let output = cmd.output().context("Failed to execute command")?;
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -123,14 +127,14 @@ impl Skill for ExecuteCommandSkill {
         let sanitized_stderr = self.sanitizer.sanitize_output(&stderr);
 
         let mut result = String::new();
-        
+
         // Add risk level indicator
         result.push_str(&format!("[Risk: {}]\n", risk.description()));
-        
+
         if !sanitized_stdout.is_empty() {
             result.push_str(&sanitized_stdout);
         }
-        
+
         if !sanitized_stderr.is_empty() {
             if !result.is_empty() {
                 result.push_str("\n--- stderr ---\n");
@@ -139,7 +143,10 @@ impl Skill for ExecuteCommandSkill {
         }
 
         if !output.status.success() {
-            result.push_str(&format!("\n[Exit code: {}]", output.status.code().unwrap_or(-1)));
+            result.push_str(&format!(
+                "\n[Exit code: {}]",
+                output.status.code().unwrap_or(-1)
+            ));
         }
 
         Ok(result)

@@ -1,7 +1,7 @@
-use std::path::Path;
-use std::fs;
-use serde::{Deserialize, Serialize};
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ProjectType {
@@ -156,7 +156,7 @@ impl ProjectDetector {
         let mut info = ProjectInfo::default();
 
         info.has_git = self.root.join(".git").exists();
-        info.has_ci = self.root.join(".github/workflows").exists() 
+        info.has_ci = self.root.join(".github/workflows").exists()
             || self.root.join(".gitlab-ci.yml").exists()
             || self.root.join(".circleci").exists();
 
@@ -213,9 +213,18 @@ impl ProjectDetector {
         if let Ok(content) = fs::read_to_string(&path) {
             if let Ok(parsed) = content.parse::<toml::Table>() {
                 if let Some(package) = parsed.get("package").and_then(|p| p.as_table()) {
-                    info.name = package.get("name").and_then(|n| n.as_str()).map(String::from);
-                    info.version = package.get("version").and_then(|v| v.as_str()).map(String::from);
-                    info.description = package.get("description").and_then(|d| d.as_str()).map(String::from);
+                    info.name = package
+                        .get("name")
+                        .and_then(|n| n.as_str())
+                        .map(String::from);
+                    info.version = package
+                        .get("version")
+                        .and_then(|v| v.as_str())
+                        .map(String::from);
+                    info.description = package
+                        .get("description")
+                        .and_then(|d| d.as_str())
+                        .map(String::from);
                 }
                 if let Some(deps) = parsed.get("dependencies").and_then(|d| d.as_table()) {
                     info.dependencies = deps.keys().cloned().collect();
@@ -228,10 +237,19 @@ impl ProjectDetector {
         let path = self.root.join("package.json");
         if let Ok(content) = fs::read_to_string(&path) {
             if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&content) {
-                info.name = parsed.get("name").and_then(|n| n.as_str()).map(String::from);
-                info.version = parsed.get("version").and_then(|v| v.as_str()).map(String::from);
-                info.description = parsed.get("description").and_then(|d| d.as_str()).map(String::from);
-                
+                info.name = parsed
+                    .get("name")
+                    .and_then(|n| n.as_str())
+                    .map(String::from);
+                info.version = parsed
+                    .get("version")
+                    .and_then(|v| v.as_str())
+                    .map(String::from);
+                info.description = parsed
+                    .get("description")
+                    .and_then(|d| d.as_str())
+                    .map(String::from);
+
                 if let Some(deps) = parsed.get("dependencies").and_then(|d| d.as_object()) {
                     info.dependencies.extend(deps.keys().cloned());
                 }
@@ -247,9 +265,18 @@ impl ProjectDetector {
         if let Ok(content) = fs::read_to_string(&path) {
             if let Ok(parsed) = content.parse::<toml::Table>() {
                 if let Some(project) = parsed.get("project").and_then(|p| p.as_table()) {
-                    info.name = project.get("name").and_then(|n| n.as_str()).map(String::from);
-                    info.version = project.get("version").and_then(|v| v.as_str()).map(String::from);
-                    info.description = project.get("description").and_then(|d| d.as_str()).map(String::from);
+                    info.name = project
+                        .get("name")
+                        .and_then(|n| n.as_str())
+                        .map(String::from);
+                    info.version = project
+                        .get("version")
+                        .and_then(|v| v.as_str())
+                        .map(String::from);
+                    info.description = project
+                        .get("description")
+                        .and_then(|d| d.as_str())
+                        .map(String::from);
                 }
             }
         }
@@ -282,7 +309,7 @@ impl ProjectDetector {
                 }
             }
             ProjectType::Python => {
-                return self.root.join("pytest.ini").exists() 
+                return self.root.join("pytest.ini").exists()
                     || self.root.join("setup.cfg").exists();
             }
             _ => {}

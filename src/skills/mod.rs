@@ -1,12 +1,12 @@
-mod registry;
-mod file_ops;
-mod shell;
-mod git_ops;
-mod edit_file;
 mod codebase;
+mod edit_file;
+mod file_ops;
+mod git_ops;
+mod registry;
+mod shell;
 
-pub use registry::SkillRegistry;
+pub use codebase::CodebaseSkill;
+pub use edit_file::{EditFileSkill, MultiEditSkill};
 pub use registry::Skill;
 pub use registry::SkillDefinition;
-pub use edit_file::{EditFileSkill, MultiEditSkill};
-pub use codebase::CodebaseSkill;
+pub use registry::SkillRegistry;
