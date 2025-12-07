@@ -114,7 +114,7 @@ impl PluginInstance {
         Ok(())
     }
 
-    fn execute_wasm(&self, input: &PluginInput) -> Result<PluginOutput> {
+    fn execute_wasm(&self, _input: &PluginInput) -> Result<PluginOutput> {
         // WASM runtime disabled
         Ok(PluginOutput::error(
             "WASM runtime is disabled. Rebuild with wasmtime feature for WASM plugin support.",

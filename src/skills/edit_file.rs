@@ -286,7 +286,7 @@ impl MultiEditSkill {
         let mut results = Vec::new();
         let mut backups: Vec<(String, String)> = Vec::new();
 
-        for (path, search, replace) in &edits {
+        for (path, _search, _replace) in &edits {
             if Path::new(path).exists() {
                 let content = fs::read_to_string(path)?;
                 backups.push((path.clone(), content));

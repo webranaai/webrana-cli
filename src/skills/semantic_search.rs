@@ -4,14 +4,14 @@
 // Created by: SYNAPSE (Team Beta)
 // ============================================
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
 use crate::embeddings::{
-    cosine_similarity, EmbeddingProvider, EmbeddingStore, MockEmbeddingProvider,
+    EmbeddingProvider, EmbeddingStore, MockEmbeddingProvider,
     OpenAIEmbeddings, SearchResult, StoredEmbedding,
 };
 use crate::indexer::FileWalker;

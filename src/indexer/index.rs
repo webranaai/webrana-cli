@@ -126,7 +126,6 @@ impl FileIndex {
 
     pub fn tree(&self, max_depth: usize) -> String {
         let mut output = String::new();
-        let mut current_depth = 0;
 
         for entry in &self.entries {
             let depth = entry.path.matches('/').count();

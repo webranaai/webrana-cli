@@ -16,8 +16,6 @@ pub use store::{EmbeddingStore, SearchResult, StoredEmbedding};
 #[cfg(feature = "qdrant")]
 pub use qdrant::{QdrantConfig, QdrantStore};
 
-use anyhow::Result;
-
 /// Embedding vector type
 pub type Embedding = Vec<f32>;
 

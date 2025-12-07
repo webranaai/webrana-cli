@@ -8,7 +8,7 @@ use anyhow::Result;
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::embeddings::{EmbeddingProvider, EmbeddingStore, SearchResult, StoredEmbedding};
+use crate::embeddings::{EmbeddingProvider, EmbeddingStore, StoredEmbedding};
 
 /// Configuration for RAG context building
 #[derive(Debug, Clone)]
