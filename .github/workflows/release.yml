@@ -181,12 +181,13 @@ jobs:
           asset_content_type: application/zip
 
   # ==========================================
-  # Publish to Docker Hub
+  # Publish to Docker Hub (DISABLED - wasmtime build issues)
   # ==========================================
   docker-release:
     name: Docker Release
     needs: create-release
     runs-on: ubuntu-latest
+    if: false  # Temporarily disabled
     steps:
       - uses: actions/checkout@v4
       
