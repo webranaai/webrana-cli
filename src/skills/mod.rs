@@ -5,8 +5,9 @@ mod git_ops;
 mod registry;
 mod shell;
 
+#[allow(unused_imports)]
 pub use codebase::CodebaseSkill;
+#[allow(unused_imports)]
 pub use edit_file::{EditFileSkill, MultiEditSkill};
-pub use registry::Skill;
-pub use registry::SkillDefinition;
-pub use registry::SkillRegistry;
+#[allow(unused_imports)]
+pub use registry::{Skill, SkillDefinition, SkillRegistry};

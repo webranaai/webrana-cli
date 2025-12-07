@@ -7,8 +7,11 @@ mod loader;
 mod manifest;
 mod runtime;
 
+#[allow(unused_imports)]
 pub use loader::PluginLoader;
+#[allow(unused_imports)]
 pub use manifest::{PluginConfig, PluginManifest};
+#[allow(unused_imports)]
 pub use runtime::{PluginInstance, PluginRuntime};
 
 use anyhow::Result;

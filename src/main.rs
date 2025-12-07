@@ -1,3 +1,6 @@
+// Allow dead code for modules prepared for future use
+#![allow(dead_code)]
+
 mod cli;
 mod config;
 mod core;

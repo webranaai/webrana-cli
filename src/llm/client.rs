@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use colored::Colorize;
 use std::sync::Arc;
 
+#[allow(unused_imports)]
 use super::providers::{
     AnthropicProvider, ChatResponse, Message, OllamaProvider, OpenAIProvider, Provider, ToolCall,
     ToolDefinition,

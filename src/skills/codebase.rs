@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
+#[allow(unused_imports)]
 use crate::indexer::{FileIndex, FileType, FileWalker, ProjectDetector, ProjectInfo};
 
 #[derive(Debug, Serialize, Deserialize)]
