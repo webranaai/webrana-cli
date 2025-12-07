@@ -7,12 +7,16 @@ use super::providers::{
     AnthropicProvider, ChatResponse, Message, OllamaProvider, OpenAIProvider, Provider, ToolCall,
     ToolDefinition,
 };
+use super::cache::ResponseCache;
+use super::retry::{with_retry, RetryConfig};
 use crate::config::Settings;
 use crate::skills::SkillRegistry;
 
 pub struct LlmClient {
     provider: Arc<dyn Provider>,
     settings: Settings,
+    cache: Arc<ResponseCache>,
+    retry_config: RetryConfig,
 }
 
 impl LlmClient {
@@ -55,7 +59,31 @@ impl LlmClient {
         Ok(Self {
             provider,
             settings: settings.clone(),
+            cache: Arc::new(ResponseCache::default()),
+            retry_config: RetryConfig::default(),
         })
+    }
+
+    /// Create client with custom cache and retry configuration
+    pub fn with_config(
+        settings: &Settings,
+        cache: Arc<ResponseCache>,
+        retry_config: RetryConfig,
+    ) -> Result<Self> {
+        let mut client = Self::new(settings)?;
+        client.cache = cache;
+        client.retry_config = retry_config;
+        Ok(client)
+    }
+
+    /// Get cache statistics
+    pub fn cache_stats(&self) -> super::cache::CacheStats {
+        self.cache.stats()
+    }
+
+    /// Clear the response cache
+    pub fn clear_cache(&self) {
+        self.cache.clear();
     }
 
     pub async fn chat(
@@ -68,7 +96,25 @@ impl LlmClient {
         messages.extend(history.iter().cloned());
         messages.push(Message::user(user_message));
 
-        let response = self.provider.chat(messages, None).await?;
+        // Check cache first
+        if let Some(cached) = self.cache.get(&messages) {
+            tracing::debug!("Cache hit for chat request");
+            return Ok(cached);
+        }
+
+        // Execute with retry logic
+        let provider = self.provider.clone();
+        let msgs = messages.clone();
+        let response = with_retry(&self.retry_config, || {
+            let p = provider.clone();
+            let m = msgs.clone();
+            async move { p.chat(m, None).await }
+        })
+        .await?;
+
+        // Cache the response
+        self.cache.set(&messages, response.content.clone());
+
         Ok(response.content)
     }
 
@@ -82,7 +128,17 @@ impl LlmClient {
         messages.extend(history.iter().cloned());
         messages.push(Message::user(user_message));
 
-        let response = self.provider.chat_stream(messages, None).await?;
+        // Streaming responses are not cached (real-time output)
+        // But we still use retry logic
+        let provider = self.provider.clone();
+        let msgs = messages.clone();
+        let response = with_retry(&self.retry_config, || {
+            let p = provider.clone();
+            let m = msgs.clone();
+            async move { p.chat_stream(m, None).await }
+        })
+        .await?;
+
         Ok(response.content)
     }
 
