@@ -1,6 +1,6 @@
 [package]
 name = "webrana"
-version = "0.6.0"
+version = "0.7.0-alpha.1"
 edition = "2021"
 authors = ["Webrana Team"]
 description = "Autonomous CLI Agent with MCP support, multi-agent architecture, and extensible skills"
@@ -57,6 +57,12 @@ bytes = "1"
 
 # Utils
 lazy_static = "1.4"
+
+# v0.7.0: Session & TUI enhancements
+rusqlite = { version = "0.31", features = ["bundled"] }
+indicatif = "0.17"
+similar = "2.4"
+atty = "0.2"
 
 # Vector Database
 qdrant-client = { version = "1.7", optional = true }
