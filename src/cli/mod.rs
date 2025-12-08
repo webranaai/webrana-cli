@@ -3,7 +3,7 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(name = "webrana")]
 #[command(author = "Webrana Team")]
-#[command(version = "0.3.0")]
+#[command(version = "0.4.0")]
 #[command(about = "Autonomous CLI Agent - Think. Code. Execute.", long_about = None)]
 pub struct Cli {
     #[command(subcommand)]

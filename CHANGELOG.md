@@ -5,6 +5,65 @@ All notable changes to Webrana CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2024-12-08
+
+### Added
+
+#### Intelligence & RAG (Sprint 5.2)
+- **Embeddings Module** - Vector embeddings with OpenAI provider
+  - `src/embeddings/provider.rs` - OpenAI and Mock providers
+  - `src/embeddings/store.rs` - In-memory vector store with persistence
+  - Cosine similarity search with threshold filtering
+- **Semantic Search** - Code-aware search across codebase
+  - `webrana search <query>` - Search indexed codebase
+  - `webrana index` - Index directory for search
+  - Text chunking with overlap for better context
+- **RAG Context Builder** - Retrieval-augmented generation
+  - Automatic context injection into LLM prompts
+  - Configurable top_k and relevance threshold
+- **Qdrant Integration** (optional)
+  - `--features qdrant` for persistent vector storage
+  - Collection management and filtered search
+
+#### Security Hardening (Sprint 5.3)
+- **Audit Logger** - Comprehensive operation logging
+  - Event types: Command, File, LLM, Security
+  - Severity levels with file/memory storage
+  - Automatic sensitive data redaction
+- **Secret Scanner** - Detect credentials in code
+  - `webrana scan` - Scan for secrets
+  - 25+ secret types (API keys, tokens, passwords)
+  - CI/CD integration with `--fail-on-secrets`
+- **Rate Limiter** - Token bucket algorithm
+  - Per-operation rate limiting (API, LLM, File, Commands)
+  - Burst allowance and configurable windows
+
+#### Plugin Ecosystem (Sprint 5.4)
+- **Plugin Manager** - Install and manage plugins
+  - `webrana plugin list` - List installed plugins
+  - `webrana plugin install <path>` - Install from local
+  - `webrana plugin uninstall/enable/disable/info`
+- **Example Plugins** - Reference implementations
+  - `hello-plugin` (WASM) - Rust-based demo
+  - `git-stats` (Script) - Shell-based demo
+
+#### Platform Polish (Sprint 5.5)
+- **Version Command** - `webrana version` with build info
+- **Doctor Command** - `webrana doctor` system check
+- **Warning Cleanup** - Reduced from 20+ to 3 warnings
+
+### Changed
+- Test count increased: 76 -> 126 tests
+- Improved module organization
+- Better error messages
+
+### Technical
+- New modules: embeddings, audit, secrets, rate_limit, rag
+- Optional features: qdrant, tui
+- Dependency: lazy_static for global instances
+
+---
+
 ## [0.3.0-alpha] - 2024-12-07
 
 ### BREAKING CHANGES

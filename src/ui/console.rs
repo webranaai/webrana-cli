@@ -18,7 +18,7 @@ impl Console {
 {}
 "#,
             "╔═══════════════════════════════════════════════════════╗".bright_cyan(),
-            "║   WEBRANA CLI - Think. Code. Execute.   v0.2.0        ║".bright_cyan(),
+            "║   WEBRANA CLI - Think. Code. Execute.   v0.4.0        ║".bright_cyan(),
             "╚═══════════════════════════════════════════════════════╝".bright_cyan(),
         );
     }
