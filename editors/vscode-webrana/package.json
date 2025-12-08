@@ -1,0 +1,118 @@
+{
+  "name": "vscode-webrana",
+  "displayName": "Webrana CLI",
+  "description": "Webrana CLI integration for VS Code - AI-powered autonomous coding assistant",
+  "version": "0.1.0",
+  "publisher": "webrana",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/webranaai/webrana-cli"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Machine Learning",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "assistant",
+    "coding",
+    "webrana",
+    "llm",
+    "copilot"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "webrana.chat",
+        "title": "Webrana: Start Chat"
+      },
+      {
+        "command": "webrana.run",
+        "title": "Webrana: Run Task"
+      },
+      {
+        "command": "webrana.explain",
+        "title": "Webrana: Explain Selection"
+      },
+      {
+        "command": "webrana.fix",
+        "title": "Webrana: Fix Selection"
+      },
+      {
+        "command": "webrana.test",
+        "title": "Webrana: Generate Tests"
+      },
+      {
+        "command": "webrana.scan",
+        "title": "Webrana: Scan for Secrets"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "webrana.explain",
+          "group": "webrana@1",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "webrana.fix",
+          "group": "webrana@2",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "webrana.test",
+          "group": "webrana@3"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Webrana",
+      "properties": {
+        "webrana.executablePath": {
+          "type": "string",
+          "default": "webrana",
+          "description": "Path to webrana CLI executable"
+        },
+        "webrana.autoMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable auto mode (no confirmation prompts)"
+        },
+        "webrana.maxIterations": {
+          "type": "number",
+          "default": 10,
+          "description": "Maximum iterations for autonomous tasks"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "webrana.chat",
+        "key": "ctrl+shift+w",
+        "mac": "cmd+shift+w"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.0"
+  }
+}
