@@ -128,6 +128,9 @@ pub enum Commands {
 
     /// Check system requirements and configuration
     Doctor,
+
+    /// Check for updates
+    Update,
 }
 
 #[derive(Subcommand)]

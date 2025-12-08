@@ -384,6 +384,27 @@ async fn main() -> Result<()> {
 
             println!("\nAll checks complete.");
         }
+        Some(Commands::Update) => {
+            use core::updater::{check_for_updates, format_update_message, UpdateStatus};
+
+            console.info("Checking for updates...");
+
+            match check_for_updates().await {
+                UpdateStatus::UpToDate => {
+                    console.success(&format!("Webrana CLI v{} is up to date.", env!("CARGO_PKG_VERSION")));
+                }
+                UpdateStatus::UpdateAvailable { current, latest, url, .. } => {
+                    println!("\nUpdate available!");
+                    println!("  Current: v{}", current);
+                    println!("  Latest:  v{}", latest);
+                    println!("\nDownload: {}", url);
+                    println!("\nTo update, download the latest release and replace the binary.");
+                }
+                UpdateStatus::CheckFailed(err) => {
+                    console.error(&format!("Failed to check for updates: {}", err));
+                }
+            }
+        }
         None => {
             let orchestrator = Orchestrator::new(settings, cli.auto).await?;
             orchestrator.repl().await?;

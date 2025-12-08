@@ -5,6 +5,7 @@ mod orchestrator;
 pub mod rate_limit;
 mod safety;
 pub mod secrets;
+pub mod updater;
 
 #[allow(unused_imports)]
 pub use agent::Agent;
