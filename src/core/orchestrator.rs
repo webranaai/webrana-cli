@@ -21,7 +21,7 @@ pub struct Orchestrator {
 
 impl Orchestrator {
     pub async fn new(settings: Settings, auto_mode: bool) -> Result<Self> {
-        let llm = LlmClient::new(&settings)?;
+        let llm = LlmClient::new(&settings).await?;
         let context = Context::new();
         let skills = SkillRegistry::new();
         let console = Console::new();
@@ -281,5 +281,17 @@ impl Orchestrator {
         println!("  • The agent can read/write files, run commands");
         println!("  • Use Ctrl+C to interrupt streaming");
         println!();
+    }
+
+    /// Simple ask method that returns response as string (for pipe/print mode)
+    pub async fn ask_simple(&self, message: &str) -> Result<String> {
+        let (_name, system_prompt) = self.get_system_prompt();
+        
+        let response = self
+            .llm
+            .chat(&system_prompt, &[], message)
+            .await?;
+        
+        Ok(response)
     }
 }

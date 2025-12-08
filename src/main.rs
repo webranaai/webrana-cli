@@ -32,18 +32,92 @@ async fn main() -> Result<()> {
     let settings = Settings::load()?;
     let console = Console::new();
 
-    console.banner();
+    // Check if we should suppress banner (for clean output modes)
+    let suppress_banner = matches!(
+        &cli.command,
+        Some(Commands::Ask { print: true, .. }) | Some(Commands::Ask { json: true, .. })
+    );
+    
+    if !suppress_banner {
+        console.banner();
+    }
 
     // Change working directory if specified
     if let Some(workdir) = &cli.workdir {
         std::env::set_current_dir(workdir)?;
-        console.info(&format!("Working directory: {}", workdir));
+        if !suppress_banner {
+            console.info(&format!("Working directory: {}", workdir));
+        }
     }
 
     match cli.command {
         Some(Commands::Chat { message, auto }) => {
             let orchestrator = Orchestrator::new(settings, auto || cli.auto).await?;
             orchestrator.chat(&message).await?;
+        }
+        Some(Commands::Ask { query, print, json, model: _, provider: _ }) => {
+            use std::io::{self, Read};
+            
+            // Check if we have pipe input
+            let has_pipe = !atty::is(atty::Stream::Stdin);
+            
+            // Read pipe input if available
+            let pipe_content = if has_pipe {
+                let mut buffer = String::new();
+                io::stdin().read_to_string(&mut buffer)?;
+                Some(buffer)
+            } else {
+                None
+            };
+            
+            // Build the full prompt
+            let full_prompt = match (&pipe_content, query.is_empty()) {
+                (Some(content), true) => {
+                    // Only pipe input, no query
+                    content.clone()
+                }
+                (Some(content), false) => {
+                    // Both pipe input and query
+                    format!("{}\n\n---\n\n{}", query, content)
+                }
+                (None, false) => {
+                    // Only query, no pipe
+                    query.clone()
+                }
+                (None, true) => {
+                    // No input at all
+                    console.error("No input provided. Use: webrana ask \"query\" or pipe content");
+                    std::process::exit(1);
+                }
+            };
+            
+            if !print && !json {
+                console.info(&format!(
+                    "📝 Ask mode{}",
+                    if has_pipe { " (with pipe input)" } else { "" }
+                ));
+            }
+            
+            // Create orchestrator and get response
+            let orchestrator = Orchestrator::new(settings.clone(), false).await?;
+            
+            if json {
+                // JSON output mode
+                let response = orchestrator.ask_simple(&full_prompt).await?;
+                let output = serde_json::json!({
+                    "query": query,
+                    "has_pipe_input": has_pipe,
+                    "response": response,
+                });
+                println!("{}", serde_json::to_string_pretty(&output)?);
+            } else if print {
+                // Print mode - clean output only
+                let response = orchestrator.ask_simple(&full_prompt).await?;
+                println!("{}", response);
+            } else {
+                // Normal mode with formatting
+                orchestrator.chat(&full_prompt).await?;
+            }
         }
         Some(Commands::Run {
             task,

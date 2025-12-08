@@ -3,8 +3,8 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(name = "webrana")]
 #[command(author = "Webrana Team")]
-#[command(version = "0.6.0")]
-#[command(about = "Autonomous CLI Agent - Think. Code. Execute.", long_about = None)]
+#[command(version = "0.7.0-alpha.1")]
+#[command(about = "Autonomous CLI Agent - Ready When You Are.", long_about = None)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Commands>,
@@ -37,6 +37,29 @@ pub enum Commands {
         /// Enable auto mode for this chat
         #[arg(short, long)]
         auto: bool,
+    },
+
+    /// One-shot query (supports pipe input: cat file | webrana ask "explain")
+    Ask {
+        /// The query/prompt (optional if using pipe input)
+        #[arg(default_value = "")]
+        query: String,
+
+        /// Print mode - output only, no interactive elements
+        #[arg(short, long)]
+        print: bool,
+
+        /// Output in JSON format
+        #[arg(long)]
+        json: bool,
+
+        /// Model to use (overrides default)
+        #[arg(short, long)]
+        model: Option<String>,
+
+        /// Provider to use (overrides default)
+        #[arg(long)]
+        provider: Option<String>,
     },
 
     /// Run a task autonomously until completion

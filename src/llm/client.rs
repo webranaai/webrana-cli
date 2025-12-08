@@ -7,6 +7,7 @@ use super::providers::{
     AnthropicProvider, ChatResponse, Message, OllamaProvider, OpenAIProvider, Provider, ToolCall,
     ToolDefinition,
 };
+use super::webrana::WebranaProvider;
 use super::cache::ResponseCache;
 use super::retry::{with_retry, RetryConfig};
 use crate::config::Settings;
@@ -20,7 +21,7 @@ pub struct LlmClient {
 }
 
 impl LlmClient {
-    pub fn new(settings: &Settings) -> Result<Self> {
+    pub async fn new(settings: &Settings) -> Result<Self> {
         let model_config = settings
             .get_model(&settings.default_model)
             .context("Default model not found in configuration")?;
@@ -53,6 +54,12 @@ impl LlmClient {
                     .unwrap_or_else(|| "http://localhost:11434".to_string());
                 Arc::new(OllamaProvider::new(base_url, model_config.model.clone()))
             }
+            "webrana" => {
+                // Built-in Webrana API provider (free tier)
+                let webrana = WebranaProvider::new().await
+                    .context("Failed to initialize Webrana provider. Try 'webrana login' to re-register.")?;
+                Arc::new(webrana)
+            }
             _ => anyhow::bail!("Unknown provider: {}", model_config.provider),
         };
 
@@ -65,12 +72,12 @@ impl LlmClient {
     }
 
     /// Create client with custom cache and retry configuration
-    pub fn with_config(
+    pub async fn with_config(
         settings: &Settings,
         cache: Arc<ResponseCache>,
         retry_config: RetryConfig,
     ) -> Result<Self> {
-        let mut client = Self::new(settings)?;
+        let mut client = Self::new(settings).await?;
         client.cache = cache;
         client.retry_config = retry_config;
         Ok(client)
