@@ -68,12 +68,107 @@ async fn main() -> Result<()> {
         Some(Commands::Config) => {
             console.show_config(&settings);
         }
-        Some(Commands::Mcp { command }) => match command {
-            cli::McpCommands::Serve { port } => {
-                console.info(&format!("Starting MCP server on port {}...", port));
-                mcp::server::start(port).await?;
+        Some(Commands::Mcp { command }) => {
+            use mcp::{McpClient, McpRegistry, McpServerConfig};
+            use std::collections::HashMap;
+            use std::sync::Mutex;
+
+            // Lazy static for persistent registry across commands
+            static MCP_REGISTRY: std::sync::OnceLock<Mutex<McpRegistry>> = std::sync::OnceLock::new();
+            let registry = MCP_REGISTRY.get_or_init(|| Mutex::new(McpRegistry::new()));
+
+            match command {
+                cli::McpCommands::Serve { port } => {
+                    console.info(&format!("Starting MCP server on port {}...", port));
+                    mcp::server::start(port).await?;
+                }
+                cli::McpCommands::List => {
+                    let reg = registry.lock().unwrap();
+                    let servers = reg.connected_servers();
+                    if servers.is_empty() {
+                        console.info("No MCP servers connected");
+                    } else {
+                        println!("\nConnected MCP servers:\n");
+                        for name in servers {
+                            let info = reg.server_info(name).unwrap_or_else(|| "unknown".to_string());
+                            println!("  {} - {}", name, info);
+                        }
+                    }
+                }
+                cli::McpCommands::Connect { name, command, args } => {
+                    console.info(&format!("Connecting to MCP server '{}'...", name));
+                    let config = McpServerConfig {
+                        command,
+                        args,
+                        env: HashMap::new(),
+                        enabled: true,
+                    };
+                    let mut reg = registry.lock().unwrap();
+                    match reg.add_server(&name, &config) {
+                        Ok(_) => {
+                            let tools = reg.list_server_tools(&name).map(|t| t.len()).unwrap_or(0);
+                            console.success(&format!("Connected to '{}' ({} tools available)", name, tools));
+                        }
+                        Err(e) => {
+                            console.error(&format!("Failed to connect: {}", e));
+                        }
+                    }
+                }
+                cli::McpCommands::Disconnect { name } => {
+                    let mut reg = registry.lock().unwrap();
+                    match reg.remove_server(&name) {
+                        Ok(_) => console.success(&format!("Disconnected from '{}'", name)),
+                        Err(e) => console.error(&format!("Failed to disconnect: {}", e)),
+                    }
+                }
+                cli::McpCommands::Tools { server } => {
+                    let reg = registry.lock().unwrap();
+                    let tools = if let Some(name) = server {
+                        reg.list_server_tools(&name)
+                            .map(|t| t.iter().map(|tool| (name.clone(), tool.clone())).collect())
+                            .unwrap_or_default()
+                    } else {
+                        reg.list_all_tools()
+                    };
+
+                    if tools.is_empty() {
+                        console.info("No tools available. Connect to an MCP server first.");
+                    } else {
+                        println!("\nAvailable MCP tools:\n");
+                        for (server_name, tool) in tools {
+                            println!("  {} (from {})", tool.name, server_name);
+                            if let Some(desc) = &tool.description {
+                                println!("    {}", desc);
+                            }
+                        }
+                    }
+                }
+                cli::McpCommands::Call { tool, args } => {
+                    let arguments: HashMap<String, serde_json::Value> = 
+                        serde_json::from_str(&args).unwrap_or_default();
+                    
+                    let mut reg = registry.lock().unwrap();
+                    match reg.call_tool(&tool, arguments) {
+                        Ok(result) => {
+                            for content in result.content {
+                                match content {
+                                    mcp::ToolContent::Text { text } => println!("{}", text),
+                                    mcp::ToolContent::Image { data, mime_type } => {
+                                        println!("[Image: {} bytes, {}]", data.len(), mime_type);
+                                    }
+                                    mcp::ToolContent::Resource { uri, .. } => {
+                                        println!("[Resource: {}]", uri);
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            console.error(&format!("Tool call failed: {}", e));
+                        }
+                    }
+                }
             }
-        },
+        }
         Some(Commands::Tui) => {
             tui::run_tui().await?;
         }

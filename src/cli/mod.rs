@@ -177,4 +177,43 @@ pub enum McpCommands {
         #[arg(short, long, default_value = "3000")]
         port: u16,
     },
+
+    /// List connected MCP servers
+    List,
+
+    /// Connect to an MCP server
+    Connect {
+        /// Server name
+        name: String,
+
+        /// Command to run
+        command: String,
+
+        /// Arguments for the command
+        #[arg(trailing_var_arg = true)]
+        args: Vec<String>,
+    },
+
+    /// Disconnect from an MCP server
+    Disconnect {
+        /// Server name
+        name: String,
+    },
+
+    /// List tools from a specific server
+    Tools {
+        /// Server name (optional, lists all if not specified)
+        #[arg(short, long)]
+        server: Option<String>,
+    },
+
+    /// Call an MCP tool
+    Call {
+        /// Tool name
+        tool: String,
+
+        /// JSON arguments
+        #[arg(short, long, default_value = "{}")]
+        args: String,
+    },
 }
