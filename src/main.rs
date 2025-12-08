@@ -649,6 +649,73 @@ async fn main() -> Result<()> {
                 }
             }
         }
+        Some(Commands::Status) => {
+            use llm::webrana::WebranaProvider;
+
+            console.info("Checking Webrana API status...");
+
+            match WebranaProvider::get_status().await {
+                Ok(status) => {
+                    println!("\n📊 Webrana API Status\n");
+                    println!("  Tier: {}", status.tier.to_uppercase());
+                    println!();
+                    println!("  Requests today: {}/{}", status.usage.requests_today, status.usage.requests_limit);
+                    println!("  Tokens today:   {}/{}", status.usage.tokens_today, status.usage.tokens_limit);
+                    println!();
+                    println!("  Resets at: {}", status.resets_at);
+                    
+                    // Progress bar for requests
+                    let pct = (status.usage.requests_today as f32 / status.usage.requests_limit as f32 * 100.0) as i32;
+                    let filled = pct / 5;
+                    let empty = 20 - filled;
+                    println!();
+                    println!("  Usage: [{}{}] {}%", 
+                        "█".repeat(filled as usize), 
+                        "░".repeat(empty as usize),
+                        pct
+                    );
+                }
+                Err(e) => {
+                    console.error(&format!("Failed to get status: {}", e));
+                }
+            }
+        }
+        Some(Commands::Login) => {
+            use llm::webrana::WebranaProvider;
+
+            console.info("Registering device with Webrana API...");
+
+            // Clear existing credentials first
+            WebranaProvider::clear_credentials().ok();
+
+            match WebranaProvider::new().await {
+                Ok(_) => {
+                    console.success("Successfully logged in to Webrana API");
+                    
+                    // Show status after login
+                    if let Ok(status) = WebranaProvider::get_status().await {
+                        println!("\n  Tier: {}", status.tier);
+                        println!("  Daily limit: {} requests", status.usage.requests_limit);
+                    }
+                }
+                Err(e) => {
+                    console.error(&format!("Login failed: {}", e));
+                }
+            }
+        }
+        Some(Commands::Logout) => {
+            use llm::webrana::WebranaProvider;
+
+            match WebranaProvider::clear_credentials() {
+                Ok(_) => {
+                    console.success("Logged out from Webrana API");
+                    console.info("Credentials have been cleared");
+                }
+                Err(e) => {
+                    console.error(&format!("Logout failed: {}", e));
+                }
+            }
+        }
         None => {
             let orchestrator = Orchestrator::new(settings, cli.auto).await?;
             orchestrator.repl().await?;

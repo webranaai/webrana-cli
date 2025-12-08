@@ -4,7 +4,7 @@
 
 Webrana API Gateway provides built-in LLM access for Webrana CLI users without requiring their own API keys.
 
-**Domain**: api.webranaai.com
+**Domain**: api.webrana.id
 **Target Launch**: Week 2 December 2024
 
 ## Architecture
@@ -23,7 +23,7 @@ Webrana API Gateway provides built-in LLM access for Webrana CLI users without r
                            ▼
 ┌─────────────────────────────────────────────────────────┐
 │              WEBRANA API GATEWAY                        │
-│              api.webranaai.com                          │
+│              api.webrana.id                             │
 │  ┌─────────────────────────────────────────────────┐   │
 │  │  Rust (Axum) + SQLite + Redis                   │   │
 │  │  - Device authentication                        │   │
@@ -350,7 +350,7 @@ volumes:
 ### Caddyfile
 
 ```
-api.webranaai.com {
+api.webrana.id {
     reverse_proxy api:3000
 }
 ```

@@ -137,6 +137,15 @@ pub enum Commands {
 
     /// Check for updates
     Update,
+
+    /// Show Webrana API usage status
+    Status,
+
+    /// Login to Webrana API (re-register device)
+    Login,
+
+    /// Logout from Webrana API (clear credentials)
+    Logout,
 }
 
 #[derive(Subcommand)]
