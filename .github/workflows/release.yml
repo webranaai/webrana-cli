@@ -181,18 +181,14 @@ jobs:
           asset_content_type: application/zip
 
   # ==========================================
-  # Publish to Docker Hub (DISABLED - wasmtime build issues)
+  # Publish to Docker Hub (Musl/Alpine build)
   # ==========================================
   docker-release:
     name: Docker Release
     needs: create-release
     runs-on: ubuntu-latest
-    if: false  # Temporarily disabled
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -214,10 +210,11 @@ jobs:
             type=semver,pattern={{major}}
             type=raw,value=latest,enable=${{ !contains(github.ref, 'alpha') && !contains(github.ref, 'beta') && !contains(github.ref, 'rc') }}
       
-      - name: Build and push
+      - name: Build and push (x86_64 with musl)
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile.musl
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
