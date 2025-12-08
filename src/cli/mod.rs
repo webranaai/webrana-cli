@@ -63,6 +63,12 @@ pub enum Commands {
     /// Show current configuration
     Config,
 
+    /// Crew management (custom AI personas)
+    Crew {
+        #[command(subcommand)]
+        command: CrewCommands,
+    },
+
     /// MCP server commands
     Mcp {
         #[command(subcommand)]
@@ -216,4 +222,72 @@ pub enum McpCommands {
         #[arg(short, long, default_value = "{}")]
         args: String,
     },
+}
+
+#[derive(Subcommand)]
+pub enum CrewCommands {
+    /// List all crew members
+    List,
+
+    /// Create a new crew member
+    Create {
+        /// Crew ID (lowercase, no spaces)
+        id: String,
+
+        /// Display name
+        #[arg(short, long)]
+        name: Option<String>,
+
+        /// Description
+        #[arg(short, long)]
+        description: Option<String>,
+
+        /// System prompt (or use --from-template)
+        #[arg(short, long)]
+        prompt: Option<String>,
+
+        /// Create from template (code-reviewer, bug-hunter, doc-writer, refactorer, test-engineer, security-auditor, devops-engineer)
+        #[arg(short, long)]
+        template: Option<String>,
+    },
+
+    /// Show crew member details
+    Show {
+        /// Crew ID
+        id: String,
+    },
+
+    /// Delete a crew member
+    Delete {
+        /// Crew ID
+        id: String,
+    },
+
+    /// Set active crew member
+    Use {
+        /// Crew ID to activate
+        id: String,
+    },
+
+    /// Clear active crew (use default agent)
+    Clear,
+
+    /// Export crew to YAML
+    Export {
+        /// Crew ID
+        id: String,
+
+        /// Output file (default: stdout)
+        #[arg(short, long)]
+        output: Option<String>,
+    },
+
+    /// Import crew from YAML file
+    Import {
+        /// YAML file path
+        file: String,
+    },
+
+    /// List available templates
+    Templates,
 }

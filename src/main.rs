@@ -4,6 +4,7 @@
 mod cli;
 mod config;
 mod core;
+mod crew;
 mod embeddings;
 mod indexer;
 mod llm;
@@ -67,6 +68,154 @@ async fn main() -> Result<()> {
         }
         Some(Commands::Config) => {
             console.show_config(&settings);
+        }
+        Some(Commands::Crew { command }) => {
+            use crew::{Crew, CrewManager, CrewTemplate};
+
+            let mut manager = CrewManager::new()?;
+
+            match command {
+                cli::CrewCommands::List => {
+                    let crews = manager.list();
+                    let active_id = manager.active_id();
+
+                    if crews.is_empty() {
+                        console.info("No crew members. Create one with: webrana crew create <id>");
+                        println!("\nAvailable templates:");
+                        for template in CrewTemplate::all() {
+                            let crew = template.create();
+                            println!("  {} - {}", crew.id, crew.description);
+                        }
+                    } else {
+                        println!("\nCrew Members:\n");
+                        for crew in crews {
+                            let active = if Some(crew.id.as_str()) == active_id { " [active]" } else { "" };
+                            println!("  {}{}", crew.id, active);
+                            println!("    Name: {}", crew.name);
+                            println!("    {}\n", crew.description);
+                        }
+                    }
+                }
+                cli::CrewCommands::Create { id, name, description, prompt, template } => {
+                    if let Some(template_name) = template {
+                        if let Some(tmpl) = CrewTemplate::from_name(&template_name) {
+                            match manager.create_from_template(tmpl) {
+                                Ok(crew) => {
+                                    console.success(&format!("Created crew '{}' from template", crew.id));
+                                }
+                                Err(e) => {
+                                    console.error(&format!("Failed to create: {}", e));
+                                }
+                            }
+                        } else {
+                            console.error(&format!("Unknown template: {}", template_name));
+                            println!("\nAvailable templates:");
+                            for t in CrewTemplate::all() {
+                                let c = t.create();
+                                println!("  {}", c.id);
+                            }
+                        }
+                    } else {
+                        let name = name.unwrap_or_else(|| id.clone());
+                        let description = description.unwrap_or_else(|| "Custom crew member".to_string());
+                        let prompt = prompt.unwrap_or_else(|| "You are a helpful AI assistant.".to_string());
+
+                        let crew = Crew::new(&id, &name, &description, &prompt);
+                        match manager.create(crew) {
+                            Ok(_) => {
+                                console.success(&format!("Created crew '{}'", id));
+                            }
+                            Err(e) => {
+                                console.error(&format!("Failed to create: {}", e));
+                            }
+                        }
+                    }
+                }
+                cli::CrewCommands::Show { id } => {
+                    if let Some(crew) = manager.get(&id) {
+                        let active = if manager.active_id() == Some(&id) { " [active]" } else { "" };
+                        println!("\nCrew: {}{}", crew.name, active);
+                        println!("ID: {}", crew.id);
+                        println!("Version: {}", crew.version);
+                        if let Some(author) = &crew.author {
+                            println!("Author: {}", author);
+                        }
+                        println!("\nDescription:\n  {}", crew.description);
+                        println!("\nSystem Prompt:\n  {}", crew.system_prompt.replace('\n', "\n  "));
+                        println!("\nConfig:");
+                        if let Some(model) = &crew.config.model {
+                            println!("  Model: {}", model);
+                        }
+                        if let Some(temp) = crew.config.temperature {
+                            println!("  Temperature: {}", temp);
+                        }
+                        println!("  Auto Mode: {}", crew.config.auto_mode);
+                        println!("\nPermissions:");
+                        println!("  Shell: {}", crew.permissions.shell_access);
+                        println!("  File Read: {}", crew.permissions.file_read);
+                        println!("  File Write: {}", crew.permissions.file_write);
+                        println!("  Network: {}", crew.permissions.network_access);
+                    } else {
+                        console.error(&format!("Crew '{}' not found", id));
+                    }
+                }
+                cli::CrewCommands::Delete { id } => {
+                    match manager.delete(&id) {
+                        Ok(true) => console.success(&format!("Deleted crew '{}'", id)),
+                        Ok(false) => console.error(&format!("Crew '{}' not found", id)),
+                        Err(e) => console.error(&format!("Failed to delete: {}", e)),
+                    }
+                }
+                cli::CrewCommands::Use { id } => {
+                    match manager.set_active(&id) {
+                        Ok(_) => {
+                            let crew = manager.get(&id).unwrap();
+                            console.success(&format!("Now using crew '{}'", crew.name));
+                            if let Some(greeting) = &crew.config.greeting {
+                                println!("\n{}", greeting);
+                            }
+                        }
+                        Err(e) => console.error(&format!("{}", e)),
+                    }
+                }
+                cli::CrewCommands::Clear => {
+                    manager.clear_active()?;
+                    console.success("Cleared active crew. Using default agent.");
+                }
+                cli::CrewCommands::Export { id, output } => {
+                    match manager.export(&id) {
+                        Ok(yaml) => {
+                            if let Some(path) = output {
+                                std::fs::write(&path, &yaml)?;
+                                console.success(&format!("Exported to {}", path));
+                            } else {
+                                println!("{}", yaml);
+                            }
+                        }
+                        Err(e) => console.error(&format!("{}", e)),
+                    }
+                }
+                cli::CrewCommands::Import { file } => {
+                    let yaml = std::fs::read_to_string(&file)?;
+                    match manager.import(&yaml) {
+                        Ok(crew) => {
+                            console.success(&format!("Imported crew '{}'", crew.id));
+                        }
+                        Err(e) => console.error(&format!("Failed to import: {}", e)),
+                    }
+                }
+                cli::CrewCommands::Templates => {
+                    println!("\nAvailable Templates:\n");
+                    for template in CrewTemplate::all() {
+                        let crew = template.create();
+                        println!("  {}", crew.id);
+                        println!("    Name: {}", crew.name);
+                        println!("    {}", crew.description);
+                        println!("    Tags: {}\n", crew.tags.join(", "));
+                    }
+                    println!("Create from template: webrana crew create <id> --template <template-id>");
+                }
+            }
         }
         Some(Commands::Mcp { command }) => {
             use mcp::{McpClient, McpRegistry, McpServerConfig};
