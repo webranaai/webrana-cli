@@ -3,6 +3,7 @@ use colored::Colorize;
 use std::io::{self, Write};
 
 use crate::config::Settings;
+use crate::crew::{Crew, CrewManager};
 use crate::llm::{LlmClient, Message};
 use crate::memory::Context;
 use crate::skills::SkillRegistry;
@@ -15,6 +16,7 @@ pub struct Orchestrator {
     skills: SkillRegistry,
     console: Console,
     auto_mode: bool,
+    active_crew: Option<Crew>,
 }
 
 impl Orchestrator {
@@ -24,6 +26,15 @@ impl Orchestrator {
         let skills = SkillRegistry::new();
         let console = Console::new();
 
+        // Load active crew if any
+        let active_crew = CrewManager::new()
+            .ok()
+            .and_then(|manager| manager.active().cloned());
+
+        if let Some(ref crew) = active_crew {
+            console.info(&format!("Active crew: {}", crew.name));
+        }
+
         Ok(Self {
             settings,
             llm,
@@ -31,27 +42,38 @@ impl Orchestrator {
             skills,
             console,
             auto_mode,
+            active_crew,
         })
+    }
+
+    /// Get the effective system prompt (crew or default agent)
+    fn get_system_prompt(&self) -> (String, String) {
+        if let Some(ref crew) = self.active_crew {
+            (crew.name.clone(), crew.effective_system_prompt())
+        } else {
+            let agent = self
+                .settings
+                .get_agent(&self.settings.default_agent)
+                .expect("Default agent not found");
+            (agent.name.clone(), agent.system_prompt.clone())
+        }
     }
 
     pub async fn chat(&self, message: &str) -> Result<()> {
         self.console.user_message(message);
 
-        let agent = self
-            .settings
-            .get_agent(&self.settings.default_agent)
-            .expect("Default agent not found");
+        let (name, system_prompt) = self.get_system_prompt();
 
         println!(
             "\n{} {}",
-            format!("[{}]", agent.name).green().bold(),
+            format!("[{}]", name).green().bold(),
             "━".repeat(50).dimmed()
         );
 
         let response = self
             .llm
             .chat_with_tools(
-                &agent.system_prompt,
+                &system_prompt,
                 self.context.get_messages(),
                 message,
                 &self.skills,
@@ -79,16 +101,15 @@ impl Orchestrator {
     pub async fn repl(&self) -> Result<()> {
         self.console
             .info("Starting interactive mode. Type 'exit' to quit.\n");
-        self.console.info(&format!(
-            "Model: {} | Agent: {}\n",
-            self.settings.default_model.cyan(),
-            self.settings.default_agent.cyan()
-        ));
 
-        let agent = self
-            .settings
-            .get_agent(&self.settings.default_agent)
-            .expect("Default agent not found");
+        let (name, system_prompt) = self.get_system_prompt();
+        
+        self.console.info(&format!(
+            "Model: {} | {}: {}\n",
+            self.settings.default_model.cyan(),
+            if self.active_crew.is_some() { "Crew" } else { "Agent" },
+            name.cyan()
+        ));
 
         let mut history: Vec<Message> = Vec::new();
 
@@ -144,14 +165,14 @@ impl Orchestrator {
 
             println!(
                 "\n{} {}",
-                format!("[{}]", agent.name).green().bold(),
+                format!("[{}]", name).green().bold(),
                 "━".repeat(50).dimmed()
             );
 
             // Use the tool loop for multi-turn tool usage
             match self
                 .llm
-                .chat_with_tools_loop(&agent.system_prompt, &mut history, input, &self.skills)
+                .chat_with_tools_loop(&system_prompt, &mut history, input, &self.skills)
                 .await
             {
                 Ok(response) => {
@@ -175,10 +196,7 @@ impl Orchestrator {
         max_iterations: usize,
         yolo: bool,
     ) -> Result<()> {
-        let agent = self
-            .settings
-            .get_agent(&self.settings.default_agent)
-            .expect("Default agent not found");
+        let (_name, system_prompt) = self.get_system_prompt();
 
         let mut history: Vec<Message> = Vec::new();
 
@@ -209,7 +227,7 @@ impl Orchestrator {
 
             match self
                 .llm
-                .chat_with_tools_loop(&agent.system_prompt, &mut history, &prompt, &self.skills)
+                .chat_with_tools_loop(&system_prompt, &mut history, &prompt, &self.skills)
                 .await
             {
                 Ok(response) => {
