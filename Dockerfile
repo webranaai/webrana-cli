@@ -8,10 +8,12 @@ FROM rust:1.82-slim-bookworm AS builder
 
 WORKDIR /app
 
-# Install build dependencies
+# Install build dependencies (including cmake for wasmtime)
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
+    cmake \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy manifests
